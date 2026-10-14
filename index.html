@@ -235,7 +235,11 @@ nav.mbar{background:var(--bg);border-top-color:var(--line)}
 .cday[aria-pressed="true"]{background:var(--hi);color:var(--on-hi)}
 .iconbtn{background:transparent;border-color:#2a2f33}
 .empty{background:transparent;border-color:#262a2e}
-.toast{background:var(--ink);color:var(--bg)}
+.toast{background:var(--ink);color:var(--bg);display:flex;align-items:center;gap:12px}
+.toast[hidden]{display:none}
+.toast .undo{border:0;background:none;color:var(--hi);font:600 14px var(--f-label);cursor:pointer;padding:2px 0}
+.btn.danger{color:#e8ebec;background:transparent;border-color:#3a2f2f}
+.btn.danger:hover{border-color:#e8ebec}
 .msg.err{background:#1f2326;color:var(--ink)}
 @media (min-width:1024px){
   .side{background:var(--bg);border-right-color:var(--line)}
@@ -247,6 +251,7 @@ nav.mbar{background:var(--bg);border-top-color:var(--line)}
 /* ---------- Listar (Verkefni, Undirverk, Fundir, Viðskiptavinir) ---------- */
 .llist{display:flex;flex-direction:column;border-top:1px solid var(--line)}
 .lrow{display:flex;align-items:center;gap:14px;padding:12px 8px;margin:0 -8px;border-bottom:1px solid var(--line);border-radius:0;cursor:pointer}
+.lrow,.card.tap,.sub-i.tap{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .lrow:hover{background:#121416}.lrow:active{background:#16191b}
 .lrow .ll{flex:none;width:34px;text-align:center;line-height:1.1}
 .lrow .ll b{display:block;font-size:19px;font-weight:500;font-variant-numeric:tabular-nums}
@@ -257,6 +262,9 @@ nav.mbar{background:var(--bg);border-top-color:var(--line)}
 .lrow .lr{flex:none;display:flex;gap:6px;align-items:center}
 .lrow .lc{font-size:12.5px;color:var(--muted)}
 .lrow .chev{margin:0}
+.ldel{display:none;flex:none;width:32px;height:32px;place-items:center;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer}
+.ldel:hover{color:var(--ink);background:#1f2326}
+@media (hover:hover){.lrow:hover .ldel{display:grid}.lrow:hover .chev{display:none}}
 .lrow:has(.pill.today) .ll b{color:var(--accent)}
 .lrow:has(.pill.late) .lt{font-weight:600}
 </style>
@@ -321,7 +329,7 @@ const STC={"Beiðni":"l1","Í vinnslu":"l2","Í yfirferð":"l3","Afhent":"done",
 const STL={"Done":"Lokið","In progress":"Í vinnslu","Up next":"Næst","Not started":"Ekki hafið"};
 const statusPill=s=>`<span class="pill ${STC[s]??""}">${esc(STL[s]||s)}</span>`;
 /* Einföld listaröð: [fremst] titill / undirlína [hægra megin] › */
-const lrow=(open,o)=>`<div class="lrow tap" ${tapAttr(open.split(":")[0],open.slice(open.indexOf(":")+1))}>${o.lead!=null?`<div class="ll">${o.lead}</div>`:""}<div class="lm"><div class="lt">${o.title}</div>${o.sub?`<div class="ls">${o.sub}</div>`:""}</div>${o.right?`<div class="lr">${o.right}</div>`:""}${CHEV}</div>`;
+const lrow=(open,o)=>`<div class="lrow tap" ${tapAttr(open.split(":")[0],open.slice(open.indexOf(":")+1))}>${o.lead!=null?`<div class="ll">${o.lead}</div>`:""}<div class="lm"><div class="lt">${o.title}</div>${o.sub?`<div class="ls">${o.sub}</div>`:""}</div>${o.right?`<div class="lr">${o.right}</div>`:""}${MCP?`<button type="button" class="ldel" data-act="del:${esc(open)}" aria-label="Eyða"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>`:""}${CHEV}</div>`;
 const llist=rows=>`<div class="llist">${rows.join("")}</div>`;
 const dateBlock=iso=>{const x=d(iso);return x?`<div class="date"><b>${x.getDate()}</b><small>${MON[x.getMonth()]}</small></div>`:`<div class="date"><b>–</b></div>`;};
 const FGLABEL=f=>{const x=d(f?.date); return "📄 Fundargerð"+(x?" "+pad(x.getDate())+"."+pad(x.getMonth()+1)+"."+x.getFullYear():"");};
@@ -329,7 +337,7 @@ function linkBtns(o,opts={}){let h="";
   if(o.fundargerd) h+=`<a class="btn primary" href="${esc(o.fundargerd)}" target="_blank" rel="noopener">${esc(FGLABEL(o))}</a>`;
   if(o.fundarhlekkur) h+=`<a class="btn ${o.fundargerd?"":"primary"}" href="${esc(o.fundarhlekkur)}" target="_blank" rel="noopener">🔗 Fjarfundur</a>`;
   if(o.mappa) h+=`<a class="btn" href="${esc(o.mappa)}" target="_blank" rel="noopener">📁 Mappa</a>`;
-  if(opts.edit&&MCP&&o.id&&!isTmp(o.id)) h+=`<button type="button" class="btn" data-act="edit:${opts.edit}:${esc(o.id)}">✎ Breyta</button>`;
+  if(opts.edit&&MCP&&o.id&&!isTmp(o.id)) h+=`<button type="button" class="btn" data-act="edit:${opts.edit}:${esc(o.id)}">✎ Breyta</button><button type="button" class="btn danger" data-act="del:${opts.edit}:${esc(o.id)}">Eyða</button>`;
   return h?`<div class="links">${h}</div>`:"";}
 const isTmp=id=>!id||/^(tmp|nytt)/.test(String(id));
 const PSTAT=["Beiðni","Í vinnslu","Í yfirferð","Afhent"], USTAT=["Not started","Up next","In progress","Done"];
@@ -673,7 +681,13 @@ function goBack(){
 }
 window.addEventListener("popstate",e=>{DETAIL=(e.state&&e.state.aera)||null; render(); window.scrollTo({top:DETAIL?0:listScroll});});
 const viewEl=document.getElementById("view");
-viewEl.addEventListener("click",e=>{const a=e.target.closest("[data-act]"); if(a){e.preventDefault(); doAct(a.dataset.act,a); return;}
+/* Haldið fingri á röð í lista í hálfa sekúndu → eyða */
+let lpT=null, lpFired=false;
+viewEl.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"||!MCP) return; const r=e.target.closest("[data-open]"); if(!r||e.target.closest("a,button")) return; lpFired=false;
+  lpT=setTimeout(()=>{lpFired=true; navigator.vibrate?.(15); deleteItem(...(k=>[k.split(":")[0],k.slice(k.indexOf(":")+1)])(r.dataset.open));},550);});
+["pointerup","pointercancel","pointermove"].forEach(t=>viewEl.addEventListener(t,e=>{if(t==="pointermove"&&Math.abs(e.movementX)+Math.abs(e.movementY)<4) return; clearTimeout(lpT);}));
+viewEl.addEventListener("contextmenu",e=>{if(e.target.closest("[data-open]")) e.preventDefault();});
+viewEl.addEventListener("click",e=>{if(lpFired){lpFired=false; e.preventDefault(); e.stopPropagation(); return;}const a=e.target.closest("[data-act]"); if(a){e.preventDefault(); doAct(a.dataset.act,a); return;}
   const t=e.target.closest("a[href],button,[data-open]"); if(t&&t.dataset.open){e.preventDefault();openDetail(t.dataset.open);}});
 viewEl.addEventListener("change",e=>{if(e.target.id==="timfilter"){timFilter=e.target.value;render();}
   if(e.target.id==="undirfilter"){undirFilter=e.target.value;render();} if(e.target.id==="skjalfilter"){skjalFilter=e.target.value;render();}});
@@ -685,6 +699,7 @@ function doAct(act,el){const [k,...r]=act.split(":");
   if(k==="caladd"){kind=r[0]; PREFILL={date:calSel}; openSheet(); return;}
   if(k==="add"){kind=r[0]; openSheet(); return;}
   if(k==="edit"){openEdit(r[0],r.slice(1).join(":")); return;}
+  if(k==="del"){deleteItem(r[0],r.slice(1).join(":")); return;}
   if(k==="status"){const [type,id,st]=r; quickStatus(type,id,st,el);}}
 viewEl.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ") return; const t=e.target.closest?.("[data-open]"); if(t&&t===e.target){e.preventDefault();openDetail(t.dataset.open);}});
 function render(){
@@ -719,7 +734,39 @@ document.getElementById("mitems").addEventListener("click",pickTab); document.ge
 /* ---------- Bæta við ---------- */
 let kind="tima";
 const sheetwrap=document.getElementById("sheetwrap"), sheet=document.getElementById("sheet");
-function toast(t){const el=document.getElementById("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3200);}
+function toast(t,undo){const el=document.getElementById("toast");el.textContent=t;
+  if(undo){const b=document.createElement("button"); b.type="button"; b.className="undo"; b.textContent="Afturkalla"; b.onclick=()=>{el.hidden=true; undo();}; el.append(" ",b);}
+  el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,undo?7000:3200);}
+/* ---------- Eyða ---------- */
+function deleteItem(type,id){
+  const T=s=>s.timar=s.timar||{}, entries=s=>[...new Set([...(s.timar?.faerslur||[]),...(s.timar?.nyjast||[])])];
+  const dropTimes=(s,pred)=>{T(s); const gone=entries(s).filter(pred); const seen=new Set();
+    gone.forEach(e=>{if(seen.has(e.id)) return; seen.add(e.id); const t=+e.timar||0, p=sFindP(s,e.verkefniId), u=e.undirverkId?sFindU(s,e.undirverkId)[1]:null;
+      if(p) p.timar=Math.max(0,(p.timar||0)-t); if(u) u.timar=Math.max(0,(u.timar||0)-t); s.timar.samtals=Math.max(0,(s.timar.samtals||0)-t);
+      if(s.timar.timabil&&(e.timabil||timabilOf(e.date))===s.timar.timabil) s.timar.timabilSamtals=Math.max(0,(s.timar.timabilSamtals||0)-t);});
+    if(s.timar.faerslur) s.timar.faerslur=s.timar.faerslur.filter(e=>!pred(e)); if(s.timar.nyjast) s.timar.nyjast=s.timar.nyjast.filter(e=>!pred(e)); return seen.size;};
+  let label="", q="", mut=null;
+  if(type==="verk"){const p=findProj(id); if(!p) return; const nu=(p.undirverk||[]).length, nt=faerslur().filter(e=>e.verkefniId===id).length;
+    label=p.nafn; q=`Eyða verkefninu „${p.nafn}“?`+(nu||nt?`\n\nÞví fylgja ${nu} undirverk og ${nt} tímaskráningar sem eyðast líka.`:"")+`\nFundir og skjöl haldast en tengjast ekki lengur verkefninu.`;
+    mut=s=>{dropTimes(s,e=>e.verkefniId===id); s.verkefni=(s.verkefni||[]).filter(x=>x.id!==id);
+      (s.fundir||[]).forEach(f=>{if(f.projectId===id){f.projectId=null;}}); (s.skjol||[]).forEach(x=>{if(x.projectId===id) x.projectId=null;});};}
+  if(type==="sub"){const r=findSub(id); if(!r) return; label=r.u.heiti; q=`Eyða undirverkinu „${r.u.heiti}“?\n\nTímaskráningar á það haldast á verkefninu.`;
+    mut=s=>{const [p]=sFindU(s,id); if(p) p.undirverk=p.undirverk.filter(u=>u.id!==id); entries(s).forEach(e=>{if(e.undirverkId===id) e.undirverkId=null;});};}
+  if(type==="fund"){const f=findFund(id); if(!f) return; label=f.name; q=`Eyða fundinum „${f.name}“?`+(f.fundargerd?`\n\nFundargerðin sjálf í OneDrive eyðist ekki.`:"");
+    mut=s=>{s.fundir=(s.fundir||[]).filter(x=>x.id!==id);};}
+  if(type==="time"){const e=findTime(id); if(!e) return; label="Tímaskráning"; q=`Eyða tímaskráningunni „${cleanLys(e.lysing)}“ (${hrs(e.timar)})?`;
+    mut=s=>{dropTimes(s,x=>x.id===id);};}
+  if(type==="skjal"){const x=findSkjal(id); if(!x) return; label=x.name; q=`Eyða skjalinu „${x.name}“?`; mut=s=>{s.skjol=(s.skjol||[]).filter(y=>y.id!==id);};}
+  if(type==="vsk"){const c=findVsk(id); if(!c) return; const n=vskProjects(c).length; label=c.name;
+    q=`Eyða „${c.name}“ úr viðskiptavinum?`+(n?`\n\n${n} verkefni tengjast fyrirtækinu. Þau haldast en tengingin fellur niður.`:"");
+    mut=s=>{s.vidskiptavinir=(s.vidskiptavinir||[]).filter(x=>!sameId(x.id,id)); (s.verkefni||[]).forEach(p=>{if(sameId(p.vskId,id)){p.vskId=null;p.vidskiptavinur=null;} if(sameId(p.vkId,id)){p.vkId=null;p.verkkaupi=null;}});};}
+  if(!mut||!confirm(q)) return;
+  const before=structuredClone(S);
+  saveSnapshot(mut).then(()=>{
+    if(DETAIL){let st=null; try{st=history.state;}catch(e){} DETAIL=null; if(st&&st.aera){try{history.back();}catch(e){}} render(); window.scrollTo({top:listScroll});}
+    toast(`${label} eytt`,()=>{S=before; saveSnapshot(s=>{Object.keys(s).forEach(k=>delete s[k]); Object.assign(s,structuredClone(before));}).then(()=>toast("Hætt við að eyða"));});
+  }).catch(e=>toast(errText(e)));
+}
 const TAB_KIND={undir:"undir",fundir:"fund",timar:"tima",skjol:"skjal",verk:"verk",vsk:"vsk",dagatal:"fund"};
 function openSheet(){sheetwrap.hidden=false;drawForm();}
 function openFab(){if(!DETAIL&&tab==="dagatal") PREFILL={date:calSel}; if(!DETAIL&&TAB_KIND[tab]) kind=TAB_KIND[tab]; else if(DETAIL?.startsWith("vsk:")) kind="verk"; _ctxRole=vskFilter||null; openSheet();}
@@ -748,9 +795,9 @@ function drawForm(){
     <label>Undirverk<select id="f-sub"></select></label>
     <label>Lýsing<input id="f-desc" required placeholder="Hvað var gert"></label>
     <label>Dagsetning<input id="f-date" type="date" required value="${isoDay(today)}"></label>
-    <div class="two"><label>Frá<input id="f-from" type="time" required></label><label>Til<input id="f-to" type="time" required></label></div>`;
+    <div class="two"><label>Frá<input id="f-from" type="text" inputmode="decimal" maxlength="5" placeholder="hh:mm" autocomplete="off" data-t24 required></label><label>Til<input id="f-to" type="text" inputmode="decimal" maxlength="5" placeholder="hh:mm" autocomplete="off" data-t24 required></label></div>`;
   if(kind==="fund") f=`<label>Heiti fundar<input id="f-name" required placeholder="T.d. Fundur með verkkaupa"></label>
-    <div class="two"><label>Dagur<input id="f-date" type="date" required value="${isoDay(today)}"></label><label>Klukkan<input id="f-time" type="time" required></label></div>
+    <div class="two"><label>Dagur<input id="f-date" type="date" required value="${isoDay(today)}"></label><label>Klukkan<input id="f-time" type="text" inputmode="decimal" maxlength="5" placeholder="hh:mm" autocomplete="off" data-t24 required></label></div>
     <label>Staðsetning<input id="f-place" placeholder="Heimilisfang eða salur"></label>
     <label>Fundarhlekkur<input id="f-link" type="url" placeholder="https://… (ef fjarfundur)"></label>
     <label>Fundargerð (slóð)<input id="f-fg" type="url" placeholder="https://… (má bæta við síðar)"></label>
@@ -792,7 +839,7 @@ function vskSelect(pre,key,label,role,selId){
   <div id="${pre}-${key}-new" class="card" style="display:none;padding:12px;background:var(--b0);border-color:var(--b1)"><div class="kind" style="margin-bottom:8px">Nýr ${label.toLowerCase()} – fer líka í Viðskiptavini</div>
     <div class="two"><label>Nafn fyrirtækis<input id="${pre}-${key}-nn" placeholder="T.d. Arion banki"></label><label>Kennitala<input id="${pre}-${key}-kt" inputmode="numeric" placeholder="000000-0000"></label></div>
     <p class="hint" style="margin:8px 0 0">Fleiri upplýsingar má bæta við á síðu viðskiptavinarins.</p></div>`;}
-function dtPair(pre,key,label,iso){return `<div class="two"><label>${label}<input id="${pre}-${key}" type="date" value="${dOnly(iso)}"></label><label>Klukkan<input id="${pre}-${key}t" type="time" value="${hhmm(iso)}"></label></div>`;}
+function dtPair(pre,key,label,iso){return `<div class="two"><label>${label}<input id="${pre}-${key}" type="date" value="${dOnly(iso)}"></label><label>Klukkan<input id="${pre}-${key}t" type="text" inputmode="decimal" maxlength="5" placeholder="hh:mm" autocomplete="off" data-t24 value="${hhmm(iso)}"></label></div>`;}
 function projFields(pre,p){
   const cv=ctxVsk(), defClient=p?projVsk(p)?.id:((cv&&(cv.hlutverk||[]).includes("Viðskiptavinur"))?cv.id:vskByName("Sonik")?.id);
   const defBuyer=p?projVk(p)?.id:((cv&&!(cv.hlutverk||[]).includes("Viðskiptavinur"))?cv.id:null);
@@ -860,7 +907,13 @@ function readVskForm(pre,editing){
     "Sími":nz(c.simi),"Netfang":nz(c.netfang),"Vefsíða":nz(c.vefsida),"Tengiliður":nz(c.tengilidur),"Sími tengiliðs":nz(c.simiT),"Netfang tengiliðs":nz(c.netfangT),"Athugasemdir":nz(c.athugasemdir)};
   Object.keys(props).forEach(k=>props[k]===undefined&&delete props[k]);
   return {c,props};}
-const val=id=>document.getElementById(id)?.value?.trim()||"";
+/* 24 tíma klukka: tímareitir eru textareitir sem taka t.d. 930, 9:30 eða 21 og skila „09:30“ / „21:00“ */
+function normTime(v){v=String(v||"").trim().replace(/[.,h ]/g,":"); if(!v) return "";
+  let h,m; if(v.includes(":")){[h,m]=v.split(":");} else if(/^\d{1,2}$/.test(v)){h=v;m="0";} else if(/^\d{3,4}$/.test(v)){h=v.slice(0,-2);m=v.slice(-2);} else return null;
+  h=+h; m=+(m||0); if(!Number.isInteger(h)||!Number.isInteger(m)||h<0||h>23||m<0||m>59) return null; return pad(h)+":"+pad(m);}
+const val=id=>{const el=document.getElementById(id); if(!el) return ""; if(el.hasAttribute("data-t24")){const t=normTime(el.value); if(t===null) throw {code:"form",message:`Tíminn „${el.value}“ er ekki gildur. Skrifaðu t.d. 09:30 eða 14:00.`}; return t;} return el.value?.trim()||"";};
+document.addEventListener("input",e=>{const el=e.target; if(!el.matches?.("[data-t24]")) return; const c=el.value.replace(/[^\d:.]/g,""); if(c!==el.value) el.value=c;});
+document.addEventListener("focusout",e=>{const el=e.target; if(!el.matches?.("[data-t24]")) return; const t=normTime(el.value); if(t) el.value=t;});
 function msg(t,cls){const el=document.getElementById("f-msg"); if(el) el.innerHTML=t?`<div class="msg ${cls}">${t}</div>`:"";}
 function errText(e){return "Vistun mistókst: "+(e?.message||e?.code||"óþekkt villa");}
 const newId=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(16)+Math.random().toString(16).slice(2)).replace(/-/g,"");
@@ -981,7 +1034,7 @@ function openEdit(type,id){
     <label>Lýsing<textarea id="e-lys">${esc(u.lysing||"")}</textarea></label>`;}
   if(type==="fund"){const fd=findFund(id); if(!fd) return; const p=fundProj(fd); title="Breyta fundi";
     f=`<label>Heiti fundar<input id="e-name" value="${esc(fd.name)}" required></label>
-    <div class="two"><label>Dagur<input id="e-date" type="date" value="${dOnly(fd.date)}" required></label><label>Klukkan<input id="e-time" type="time" value="${hhmm(fd.date)}"></label></div>
+    <div class="two"><label>Dagur<input id="e-date" type="date" value="${dOnly(fd.date)}" required></label><label>Klukkan<input id="e-time" type="text" inputmode="decimal" maxlength="5" placeholder="hh:mm" autocomplete="off" data-t24 value="${hhmm(fd.date)}"></label></div>
     <label>Staðsetning<input id="e-place" value="${esc(fd.stadsetning||"")}"></label>
     <label>Fundarhlekkur<input id="e-link" type="url" value="${esc(fd.fundarhlekkur||"")}" placeholder="https://… (ef fjarfundur)"></label>
     <label>Fundargerð (slóð)<input id="e-fg" type="url" value="${esc(fd.fundargerd||"")}" placeholder="https://… skjal í OneDrive"></label>
@@ -997,7 +1050,7 @@ function openEdit(type,id){
     f=`<label>Verkefni<select id="e-proj" required>${allProjOpts(e.verkefniId)}</select></label><label>Undirverk<select id="e-sub"></select></label>
     <label>Lýsing<input id="e-desc" value="${esc(cleanLys(e.lysing))}" required></label>
     <label>Dagsetning<input id="e-date" type="date" value="${dOnly(e.date)}" required></label>
-    <div class="two"><label>Frá<input id="e-from" type="time" value="${esc(e.fra||"")}" required></label><label>Til<input id="e-to" type="time" value="${esc(e.til||"")}" required></label></div>`;}
+    <div class="two"><label>Frá<input id="e-from" type="text" inputmode="decimal" maxlength="5" placeholder="hh:mm" autocomplete="off" data-t24 value="${esc(e.fra||"")}" required></label><label>Til<input id="e-to" type="text" inputmode="decimal" maxlength="5" placeholder="hh:mm" autocomplete="off" data-t24 value="${esc(e.til||"")}" required></label></div>`;}
   sheet.innerHTML=`<h3 id="sheet-h">${title}</h3><form id="editf" novalidate>${f}<div id="f-msg"></div><div class="actions"><button type="button" class="btn" id="e-cancel">Hætta við</button><button class="btn primary" id="e-save">Vista</button></div></form>`;
   sheetwrap.hidden=false; wireVskSelects(sheet);
   document.getElementById("e-cancel").onclick=closeSheet;
