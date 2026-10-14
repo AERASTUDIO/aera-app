@@ -168,8 +168,48 @@ textarea{min-height:70px;resize:vertical}
 #login .logo{height:54px}#login p{margin:0;color:var(--muted)}#login .btn{padding:12px 22px;font-size:15px}
 #login-msg{font-size:13.5px;color:var(--crit)}
 .foot .syncbtn+.syncbtn{margin-left:4px}
+/* ---------- Tölvuútlit: hliðarvalmynd, breiðara efni, form í miðjum glugga ---------- */
+.side{display:none}
+.clab{display:none}
+@media (min-width:1024px){
+  body{padding-left:248px}
+  .side{display:flex;flex-direction:column;gap:14px;position:fixed;left:0;top:0;bottom:0;width:248px;box-sizing:border-box;z-index:9;background:var(--surface);border-right:1px solid var(--line);padding:22px 14px 18px;overflow:auto}
+  .side .logo{height:40px;margin:0 10px 6px}
+  .side .new{justify-content:center;padding:11px 14px;font-size:14.5px}
+  .side .new svg{width:18px;height:18px}
+  .side nav{display:flex;flex-direction:column;gap:2px}
+  .side .tab{padding:10px 12px;font-size:15px}
+  .side .tab:hover{background:var(--b0)}
+  .side .sfoot{margin-top:auto;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+  .side .sfoot .syncbtn{margin:0}
+  .app{max-width:1120px;padding-inline:40px;padding-block:0 48px}
+  header{margin-inline:-40px;padding:16px 40px 14px}
+  header .brand h1{visibility:hidden}
+  h2.big{font-size:30px;margin-top:26px}
+  .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+  .kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  .card{padding:16px 18px}
+  nav.mbar,#menuwrap,.fab,.foot .syncbtn{display:none!important}
+  .sheet{top:50%;bottom:auto;left:50%;right:auto;transform:translate(-50%,-50%);width:min(600px,calc(100vw - 48px));max-height:86vh;border-radius:20px;padding:22px 26px 24px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .grab{display:none}
+  .toast{bottom:32px;left:calc(50% + 124px)}
+  .cday{min-height:92px;align-items:stretch;padding:6px;gap:3px}
+  .cday .n{align-self:flex-start}
+  .cday .dots{display:none}
+  .clab{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .clab em{font:500 11.5px/1.35 var(--f-label);font-style:normal;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 5px;border-radius:5px;border-left:3px solid var(--c);background:var(--b0);color:var(--ink)}
+  .clab em.more{border-left:0;background:none;color:var(--muted)}
+  .cday[aria-pressed="true"] .clab em{background:rgba(255,255,255,.16);color:var(--on-accent);border-left-color:var(--on-accent)}
+  .side .tc{white-space:nowrap}
+  .cal{padding:12px;gap:6px}
+}
+@media (min-width:1500px){.list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 
+<aside class="side" aria-label="Valmynd"><span class="logo" role="img" aria-label="AERA Studio"></span>
+<button type="button" class="btn primary new" onclick="openFab()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Nýtt</button>
+<nav id="sitems"></nav>
+<div class="sfoot"><button class="syncbtn" onclick="syncNow()">Sækja afrit af gögnum</button><button class="syncbtn" onclick="aeraSignOut()">Skrá út</button></div></aside>
 <div class="app">
   <header><div class="brand"><h1><span class="logo" role="img" aria-label="AERA Studio"></span><span class="sr">AERA Studio</span></h1><div class="today" id="today"></div></div></header>
   <main id="view" aria-live="polite"></main>
@@ -380,7 +420,7 @@ function vCal(){
   const rows=cells[35].getMonth()!==mo?35:42;
   const chevL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>', chevR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>';
   const dayCell=x=>{const iso=isoDay(x), l=items.get(iso)||[], pts=[...new Set(l.filter(i=>!i.span).map(i=>i.t))].slice(0,3), sp=l.some(i=>i.span);
-    return `<button type="button" class="cday${x.getMonth()!==mo?" out":""}${iso===isoDay(today)?" today":""}" data-act="cal:${iso}" aria-pressed="${iso===calSel}" aria-label="${x.getDate()}. ${MONL[x.getMonth()]}${l.length?", "+l.length+" atriði":""}"><span class="n">${x.getDate()}</span><span class="dots">${pts.map(t=>`<i style="--c:${CALC[t]}"></i>`).join("")}</span>${sp?'<span class="span"></span>':""}</button>`;};
+    return `<button type="button" class="cday${x.getMonth()!==mo?" out":""}${iso===isoDay(today)?" today":""}" data-act="cal:${iso}" aria-pressed="${iso===calSel}" aria-label="${x.getDate()}. ${MONL[x.getMonth()]}${l.length?", "+l.length+" atriði":""}"><span class="n">${x.getDate()}</span><span class="dots">${pts.map(t=>`<i style="--c:${CALC[t]}"></i>`).join("")}</span>${(()=>{const ev=l.filter(i=>!i.span); return ev.length?`<span class="clab">${ev.slice(0,3).map(i=>`<em style="--c:${CALC[i.t]}">${esc(i.title)}</em>`).join("")}${ev.length>3?`<em class="more">+${ev.length-3}</em>`:""}</span>`:"";})()}${sp?'<span class="span"></span>':""}</button>`;};
   const sel=d(calSel), list=items.get(calSel)||[];
   const card=i=>`<div class="card tap${i.done?" compact":""}" ${tapAttr(i.open.split(":")[0],i.open.slice(i.open.indexOf(":")+1))}><div class="row"><div class="grow"><div class="kind">${esc(i.kind)}${hhmm(i.when)?" · kl. "+hhmm(i.when):""}</div><div class="t">${esc(i.title)}</div>
     <div class="meta">${i.nr?`<span class="nr">${esc(i.nr)}</span>`:""}${i.o?.stadsetning?`<span>📍 ${esc(i.o.stadsetning)}</span>`:""}${i.t==="skil"&&i.o?.stada?statusPill(i.o.stada):""}</div>${i.t==="fund"?meetBtn(i.o):""}</div>${CHEV}</div></div>`;
@@ -604,15 +644,16 @@ function drawMenu(){
   const cur=TABDEF.find(t=>t[0]===tab)||TABDEF[0], c=menuCounts(), late=S?upcoming().filter(i=>daysTo(i.when)<0).length:0;
   document.getElementById("mico").innerHTML=cur[2]; document.getElementById("mlab").textContent=cur[1];
   const b=document.getElementById("mbadge"); b.hidden=!(late&&tab!=="yfirlit"); b.textContent=late;
-  document.getElementById("mitems").innerHTML=TABDEF.map(([k,l,ic])=>`<button type="button" class="tab" role="menuitem" data-tab="${k}"${k===tab?' aria-current="page"':""}>${ic}<span class="tl">${l}</span><span class="tc">${esc(c[k]||"")}</span></button>`).join("");
+  document.getElementById("sitems").innerHTML=document.getElementById("mitems").innerHTML=TABDEF.map(([k,l,ic])=>`<button type="button" class="tab" role="menuitem" data-tab="${k}"${k===tab?' aria-current="page"':""}>${ic}<span class="tl">${l}</span><span class="tc">${esc(c[k]||"")}</span></button>`).join("");
 }
 function openMenu(){drawMenu(); menuwrap.hidden=false; mbtn.setAttribute("aria-expanded","true"); document.querySelector('#mitems [aria-current]')?.focus();}
 function closeMenu(){menuwrap.hidden=true; mbtn.setAttribute("aria-expanded","false");}
 mbtn.addEventListener("click",()=>menuwrap.hidden?openMenu():closeMenu());
 document.getElementById("mscrim").addEventListener("click",closeMenu);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!menuwrap.hidden){closeMenu(); mbtn.focus();}});
-document.getElementById("mitems").addEventListener("click",e=>{const b=e.target.closest(".tab"); if(!b) return;
-  tab=b.dataset.tab; DETAIL=null; closeMenu(); try{history.replaceState(null,"");}catch(e){} try{localStorage.setItem("aera-tab",tab)}catch(e){}; render(); window.scrollTo({top:0});});
+const pickTab=e=>{const b=e.target.closest(".tab"); if(!b) return;
+  tab=b.dataset.tab; DETAIL=null; closeMenu(); try{history.replaceState(null,"");}catch(e){} try{localStorage.setItem("aera-tab",tab)}catch(e){}; render(); window.scrollTo({top:0});};
+document.getElementById("mitems").addEventListener("click",pickTab); document.getElementById("sitems").addEventListener("click",pickTab);
 
 /* ---------- Bæta við ---------- */
 let kind="tima";
