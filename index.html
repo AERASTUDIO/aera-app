@@ -244,6 +244,21 @@ nav.mbar{background:var(--bg);border-top-color:var(--line)}
   .kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
   .clab em{background:#1a1d1f}
 }
+/* ---------- Listar (Verkefni, Undirverk, Fundir, Viðskiptavinir) ---------- */
+.llist{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.lrow{display:flex;align-items:center;gap:14px;padding:12px 8px;margin:0 -8px;border-bottom:1px solid var(--line);border-radius:0;cursor:pointer}
+.lrow:hover{background:#121416}.lrow:active{background:#16191b}
+.lrow .ll{flex:none;width:34px;text-align:center;line-height:1.1}
+.lrow .ll b{display:block;font-size:19px;font-weight:500;font-variant-numeric:tabular-nums}
+.lrow .ll small{display:block;font-size:11.5px;color:var(--muted)}
+.lrow .lm{flex:1;min-width:0}
+.lrow .lt{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .ls{font-size:12.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .lr{flex:none;display:flex;gap:6px;align-items:center}
+.lrow .lc{font-size:12.5px;color:var(--muted)}
+.lrow .chev{margin:0}
+.lrow:has(.pill.today) .ll b{color:var(--accent)}
+.lrow:has(.pill.late) .lt{font-weight:600}
 </style>
 
 <aside class="side" aria-label="Valmynd"><span class="logo" role="img" aria-label="AERA Studio"></span>
@@ -305,6 +320,9 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 const STC={"Beiðni":"l1","Í vinnslu":"l2","Í yfirferð":"l3","Afhent":"done","Not started":"","Up next":"l1","In progress":"l2","Done":"done"};
 const STL={"Done":"Lokið","In progress":"Í vinnslu","Up next":"Næst","Not started":"Ekki hafið"};
 const statusPill=s=>`<span class="pill ${STC[s]??""}">${esc(STL[s]||s)}</span>`;
+/* Einföld listaröð: [fremst] titill / undirlína [hægra megin] › */
+const lrow=(open,o)=>`<div class="lrow tap" ${tapAttr(open.split(":")[0],open.slice(open.indexOf(":")+1))}>${o.lead!=null?`<div class="ll">${o.lead}</div>`:""}<div class="lm"><div class="lt">${o.title}</div>${o.sub?`<div class="ls">${o.sub}</div>`:""}</div>${o.right?`<div class="lr">${o.right}</div>`:""}${CHEV}</div>`;
+const llist=rows=>`<div class="llist">${rows.join("")}</div>`;
 const dateBlock=iso=>{const x=d(iso);return x?`<div class="date"><b>${x.getDate()}</b><small>${MON[x.getMonth()]}</small></div>`:`<div class="date"><b>–</b></div>`;};
 const FGLABEL=f=>{const x=d(f?.date); return "📄 Fundargerð"+(x?" "+pad(x.getDate())+"."+pad(x.getMonth()+1)+"."+x.getFullYear():"");};
 function linkBtns(o,opts={}){let h="";
@@ -413,14 +431,14 @@ function vUndir(){
   const SO={"In progress":0,"Up next":1,"Not started":2};
   const byDue=(a,b)=>((a.u.skiladagur?0:1)-(b.u.skiladagur?0:1))||String(a.u.skiladagur||"").localeCompare(String(b.u.skiladagur||""))||String(b.u.nr).localeCompare(String(a.u.nr));
   const open=all.filter(r=>r.u.stada!=="Done"), done=all.filter(r=>r.u.stada==="Done").sort((a,b)=>String(b.u.nr).localeCompare(String(a.u.nr)));
-  const card=({u,p})=>`<div class="card tap${u.stada==="Done"?" compact":""}" ${tapAttr("sub",u.id)}><div class="row"><div class="grow">
-    <div class="t"><span class="nr">${esc(u.nr)}</span>&nbsp; ${esc(subName(u))}</div>
-    <div class="meta">${u.stada!=="Done"?statusPill(u.stada):""}${u.skiladagur&&u.stada!=="Done"?relPill(daysTo(u.skiladagur)):""}<span>${esc(p.stutt)}</span>${u.timar?`<span>${hrs(u.timar)}</span>`:""}</div></div>${CHEV}</div></div>`;
+  const card=({u,p})=>lrow("sub:"+u.id,{title:`<span class="nr">${esc(u.nr)}</span>&nbsp; ${esc(subName(u))}`,
+    sub:esc([p.stutt,u.timar?hrs(u.timar):""].filter(Boolean).join(" · ")),
+    right:u.stada!=="Done"&&u.skiladagur?relPill(daysTo(u.skiladagur)):""});
   const groups=[["In progress","Í vinnslu"],["Up next","Næst"],["Not started","Ekki hafið"]];
   let h=`<label style="margin-top:18px">Sía eftir verkefni<select id="undirfilter"><option value="">Öll verkefni</option>${verkefni().slice().sort((a,b)=>((a.stada==="Afhent")-(b.stada==="Afhent"))||b.nr.localeCompare(a.nr)).map(p=>`<option value="${esc(p.id)}"${p.id===undirFilter?" selected":""}>${esc(p.nafn)}</option>`).join("")}</select></label>`;
   if(!open.length) h+=`<div class="viewtitle">Opin undirverk</div><div class="empty">Engin opin undirverk.</div>`;
-  groups.forEach(([s,l])=>{const g=open.filter(r=>(SO[r.u.stada]??2)===SO[s]).sort(byDue); if(g.length) h+=`<div class="viewtitle">${l} · ${g.length}</div><div class="list">${g.map(card).join("")}</div>`;});
-  if(done.length) h+=`<div class="viewtitle">Lokið · ${done.length}</div><div class="list">${done.map(card).join("")}</div>`;
+  groups.forEach(([s,l])=>{const g=open.filter(r=>(SO[r.u.stada]??2)===SO[s]).sort(byDue); if(g.length) h+=`<div class="viewtitle">${l} · ${g.length}</div>${llist(g.map(card))}`;});
+  if(done.length) h+=`<div class="viewtitle">Lokið · ${done.length}</div>${llist(done.map(card))}`;
   return h;
 }
 let undirFilter="", skjalFilter="";
@@ -480,9 +498,9 @@ function vVsk(){
   let h=`<div class="stat-row" style="margin-top:18px">${chip("","Allir · "+all.length)}${chip("Viðskiptavinur","Viðskiptavinir")}${chip("Verkkaupi","Verkkaupar")}</div>`;
   if(!LIVE.vsk&&!S?.vidskiptavinir) return h+`<div class="empty">Engir viðskiptavinir ennþá.</div>`;
   if(!xs.length) return h+`<div class="empty">Engir viðskiptavinir.${MCP?" Bættu við með +.":""}</div>`;
-  return h+`<div class="list">${xs.map(c=>{const n=vskProjects(c), act=n.filter(p=>p.stada!=="Afhent").length;
-    return `<div class="card tap" ${tapAttr("vsk",c.id)}><div class="row"><div class="grow"><div class="t" style="font-size:16.5px">${esc(c.name)}</div>
-    <div class="meta">${rolePills(c)}<span>${n.length} ${n.length===1?"verkefni":"verkefni"}${act?` · ${act} í gangi`:""}</span>${c.stadur?`<span>${esc(c.stadur)}</span>`:""}</div></div>${CHEV}</div></div>`;}).join("")}</div>`;
+  return h+llist(xs.map(c=>{const n=vskProjects(c), act=n.filter(p=>p.stada!=="Afhent").length;
+    return lrow("vsk:"+c.id,{title:esc(c.name),sub:esc([(c.hlutverk||[]).join(" og "),c.stadur].filter(Boolean).join(" · ")),
+      right:`<span class="lc">${n.length} verkefni${act?` · ${act} í gangi`:""}</span>`});}));
 }
 const telA=t=>t?`<a class="plink" href="tel:${esc(String(t).replace(/[^\d+]/g,""))}">${esc(t)}</a>`:"";
 const mailA=t=>t?`<a class="plink" href="mailto:${esc(t)}">${esc(t)}</a>`:"";
@@ -515,16 +533,19 @@ function projCard(p){
 }
 function vVerk(){
   const ps=verkefni().slice().sort((a,b)=>b.nr.localeCompare(a.nr)); const SO={"Í yfirferð":0,"Í vinnslu":1,"Beiðni":2}; const act=ps.filter(p=>p.stada!=="Afhent").sort((a,b)=>(SO[a.stada]??3)-(SO[b.stada]??3)||b.nr.localeCompare(a.nr)), done=ps.filter(p=>p.stada==="Afhent");
-  return `<div class="viewtitle">Í gangi · ${act.length}</div>`+(act.length?`<div class="list">${act.map(p=>projCard(p)).join("")}</div>`:`<div class="empty">Engin verkefni í gangi.</div>`)
-    +(done.length?`<div class="viewtitle">Afhent · ${done.length}</div><div class="list">${done.map(p=>projCard(p)).join("")}</div>`:"");
+  const row=p=>lrow("verk:"+p.id,{title:`<span class="nr">${esc(p.nr)}</span>&nbsp; ${esc(p.stutt)}`,
+    sub:esc([vkName(p)||vsName(p),p.timar?hrs(p.timar):""].filter(Boolean).join(" · ")),
+    right:p.stada==="Afhent"?"":(p.skiladagur&&daysTo(p.skiladagur)<=14?relPill(daysTo(p.skiladagur)):statusPill(p.stada))});
+  return `<div class="viewtitle">Í gangi · ${act.length}</div>`+(act.length?llist(act.map(row)):`<div class="empty">Engin verkefni í gangi.</div>`)
+    +(done.length?`<div class="viewtitle">Afhent · ${done.length}</div>${llist(done.map(row))}`:"");
 }
 function vFundir(){
   const fs=(S?.fundir||[]).slice().sort((a,b)=>d(a.date)-d(b.date)); const up=fs.filter(f=>daysTo(f.date)>=0), past=fs.filter(f=>daysTo(f.date)<0).reverse();
-  const card=f=>`<div class="card tap" ${tapAttr("fund",f.id)}><div class="row">${dateBlock(f.date)}<div class="grow"><div class="t">${esc(f.name)}</div>
-    <div class="meta">${d(f.date)?`<span>${DAY[d(f.date).getDay()]}${hhmm(f.date)?" kl. "+hhmm(f.date):""}</span>`:""}${f.stadsetning?`<span>📍 ${esc(f.stadsetning)}</span>`:""}</div>
-    <div class="meta">${f.verknr?`<span class="nr">${esc(f.verknr)}</span>`:""}${daysTo(f.date)>=0?relPill(daysTo(f.date)):""}</div>${meetBtn(f)}</div>${CHEV}</div></div>`;
-  return `<div class="viewtitle">Framundan · ${up.length}</div>`+(up.length?`<div class="list">${up.map(card).join("")}</div>`:`<div class="empty">Engir fundir framundan.</div>`)
-    +(past.length?`<div class="viewtitle">Liðnir · ${past.length}</div><div class="list">${past.map(card).join("")}</div>`:"");
+  const card=f=>{const x=d(f.date); return lrow("fund:"+f.id,{lead:x?`<b>${x.getDate()}</b><small>${MON[x.getMonth()]}</small>`:"–",title:esc(f.name),
+    sub:esc([x?DAY[x.getDay()]+(hhmm(f.date)?" kl. "+hhmm(f.date):""):"",f.stadsetning,fundProj(f)?.nr||f.verknr].filter(Boolean).join(" · ")),
+    right:daysTo(f.date)>=0&&daysTo(f.date)<=14?relPill(daysTo(f.date)):""});};
+  return `<div class="viewtitle">Framundan · ${up.length}</div>`+(up.length?llist(up.map(card)):`<div class="empty">Engir fundir framundan.</div>`)
+    +(past.length?`<div class="viewtitle">Liðnir · ${past.length}</div>${llist(past.map(card))}`:"");
 }
 function periodLeft(){const e=new Date(today); if(today.getDate()>20) e.setMonth(e.getMonth()+1); e.setDate(20); return Math.round((e-today)/864e5);}
 const timeCard=e=>`<div class="card${e.id&&!isTmp(e.id)?" tap":""}" ${e.id&&!isTmp(e.id)?tapAttr("time",e.id):""}><div class="row">${dateBlock(e.date)}<div class="grow"><div class="t">${esc(cleanLys(e.lysing))}</div><div class="meta"><span class="nr">${esc(e.nr||"")}</span><span>${esc(e.fra||"")}${e.til?"–"+esc(e.til):""}</span>${e.starfsmadur&&e.starfsmadur!=="DFM"?`<span>${esc(e.starfsmadur)}</span>`:""}</div></div><b style="flex:none;font-variant-numeric:tabular-nums;white-space:nowrap">${hrs(e.timar)}</b></div></div>`;
