@@ -1,6 +1,6 @@
 // Þjónustuskrifta (service worker): geymir appið á tækinu svo það opnist hratt og virki án nets.
 // Hækkaðu VERSION þegar eitthvað breytist, þá sækja tækin nýju útgáfuna.
-const VERSION = "aera-v3";
+const VERSION = "aera-v4";
 const SHELL = ["./", "index.html", "firebase.js", "firebase-config.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
@@ -18,7 +18,7 @@ self.addEventListener("fetch", e => {
   if (!own && !lib) return; // Firebase-gögn og innskráning fara alltaf beint á netið
   if (own) {
     // Netið fyrst (nýjasta útgáfan), annars geymda útgáfan
-    e.respondWith(fetch(req).then(r => { if (r.ok) { const c = r.clone(); caches.open(VERSION).then(x => x.put(req, c)); } return r; })
+    e.respondWith(fetch(req, { cache: "no-cache" }).then(r => { if (r.ok) { const c = r.clone(); caches.open(VERSION).then(x => x.put(req, c)); } return r; })
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match("index.html"))));
   } else {
     // Söfn og letur breytast ekki: geymda útgáfan fyrst

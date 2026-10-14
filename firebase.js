@@ -58,4 +58,17 @@ onAuthStateChanged(auth, async user => {
   });
 });
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+// Sjálfvirk uppfærsla: þegar appið er opnað aftur er athugað hvort ný útgáfa sé komin,
+// og ef svo er endurhleðst appið sjálft (gerist þegar VERSION í sw.js er hækkað).
+if ("serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || reloading) return; reloading = true; location.reload();
+  });
+  navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then(reg => {
+    const check = () => reg.update().catch(() => {});
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") check(); });
+    setInterval(check, 30 * 60 * 1000);
+  }).catch(() => {});
+}
