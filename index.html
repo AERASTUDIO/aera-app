@@ -307,6 +307,35 @@ details.info>summary{list-style:none;cursor:pointer;display:flex;align-items:cen
 details.info>summary::-webkit-details-marker{display:none}
 details.info>summary::after{content:"›";transition:transform .15s}details.info[open]>summary::after{transform:rotate(90deg)}
 .kpis .card.tap{cursor:pointer}
+/* v12 */
+.calseg{display:inline-grid;grid-template-columns:repeat(3,auto);margin:18px 0 0}.calseg button{padding:8px 16px;min-height:40px}
+.wkcal{display:flex;flex-direction:column;gap:8px}
+.wkday{display:flex;gap:12px;background:var(--surface);border-radius:14px;padding:10px 12px;min-height:56px}
+.wkday.now{box-shadow:inset 0 0 0 1.5px var(--hi)}
+.wkh{flex:none;width:84px;display:flex;flex-direction:column;align-items:flex-start;border:0;background:none;color:var(--ink);cursor:pointer;padding:2px 0;font-family:var(--f-label)}
+.wkh b{font-size:22px;font-weight:500;line-height:1}.wkh span{font-size:11.5px;color:var(--muted);margin-top:3px}
+.wkday.now .wkh b{color:var(--accent)}
+.wkitems{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;justify-content:center}
+.wki{display:block;font-size:14px;color:var(--ink);text-decoration:none;padding:6px 8px;border-radius:8px;background:#181b1e;border-left:3px solid var(--c);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wki .wkt{color:var(--muted);font-size:12.5px;margin-right:8px;font-variant-numeric:tabular-nums}
+.wke{color:var(--muted);font-size:13px}
+@media (min-width:1024px){.wkcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.wkday{flex-direction:column;min-height:240px}.wkh{width:auto}}
+#sextra{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding-top:12px;border-top:1px solid var(--line)}
+.sx-h{font-size:12px;color:var(--muted);margin:10px 12px 4px}
+.sx-i{display:flex;flex-direction:column;padding:8px 12px;border-radius:10px;color:var(--ink);text-decoration:none;font-size:14px;cursor:pointer;min-height:36px;justify-content:center}
+.sx-i:hover{background:#16191b}.sx-i small{color:var(--muted);font-size:12px}.sx-i span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sx-w{font-size:13px;color:var(--muted);padding:0 12px}.sx-w b{color:var(--ink);font-weight:500}
+.sx-k{background:var(--hi);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}.sx-k .sx-h{margin:0;color:#d6e6f5}.sx-k .sx-t{font-size:13.5px}.sx-k .kt{font-size:26px;font-weight:300}
+.sx-k .btn{background:#fff;color:#0f3460;border:0}
+.sx-start{margin:0 0 4px}
+.req{color:var(--accent);font-weight:600}
+.reqnote{margin:0}
+details.more{border-top:1px solid var(--line);padding-top:4px}
+details.more>summary{cursor:pointer;list-style:none;color:var(--accent);font:500 14.5px var(--f-label);min-height:44px;display:flex;align-items:center;gap:6px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"+";font-size:18px;width:16px}details.more[open]>summary::before{content:"–"}
+details.more .moreb{display:flex;flex-direction:column;gap:12px;padding-bottom:6px}
+.seg{display:flex;overflow-x:auto;scrollbar-width:none}.seg::-webkit-scrollbar{display:none}.seg button{flex:1 0 auto;padding:9px 12px}
 details.fold>summary{list-style:none}details.fold>summary::-webkit-details-marker{display:none}
 details.fold>summary .lt::before{content:"›";display:inline-block;width:14px;color:var(--muted);transition:transform .15s}
 details.fold[open]>summary .lt::before{transform:rotate(90deg)}
@@ -323,6 +352,7 @@ details.fold[open]>summary .lt::before{transform:rotate(90deg)}
 <aside class="side" aria-label="Valmynd"><span class="logo" role="img" aria-label="AERA Studio"></span>
 <button type="button" class="btn primary new" onclick="openFab()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Nýtt</button>
 <nav id="sitems"></nav>
+<div id="sextra"></div>
 <div class="sfoot"><button class="syncbtn" onclick="syncNow()">Sækja afrit af gögnum</button><button class="syncbtn" onclick="aeraSignOut()">Skrá út</button></div></aside>
 <div class="app">
   <header><div class="brand"><h1><span class="logo" role="img" aria-label="AERA Studio"></span><span class="sr">AERA Studio</span></h1><div class="hright"><span class="syncstat" id="syncstat" hidden></span><button type="button" class="iconbtn hsearch" id="searchbtn" aria-label="Leit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button><div class="today" id="today"></div></div></div></header>
@@ -539,7 +569,34 @@ function calItems(){
   });
   m.forEach(l=>l.sort((a,b)=>(a.span-b.span)||String(hhmm(a.when)||"99").localeCompare(String(hhmm(b.when)||"99"))));
   _cal={k:S,v:LIVE.v,m}; return m;}
+let calMode="m"; try{const m=localStorage.getItem("aera-calmode"); if(["m","v","d"].includes(m)) calMode=m;}catch(e){}
+const calModes=()=>`<div class="seg calseg" role="tablist" aria-label="Sýn">${[["m","Mánuður"],["v","Vika"],["d","Dagur"]].map(([k,l])=>`<button type="button" role="tab" data-act="calmode:${k}" aria-pressed="${calMode===k}">${l}</button>`).join("")}</div>`;
+function calCard(i){return `<div class="card tap${i.done?" compact":""}" ${tapAttr(i.open.split(":")[0],i.open.slice(i.open.indexOf(":")+1))}><div class="row"><div class="grow"><div class="kind">${esc(i.kind)}${hhmm(i.when)?" · kl. "+hhmm(i.when):""}</div><div class="t">${esc(i.title)}</div>
+    <div class="meta">${i.nr?`<span class="nr">${esc(i.nr)}</span>`:""}${i.o?.stadsetning?`<span>📍 ${esc(i.o.stadsetning)}</span>`:""}${i.t==="skil"&&i.o?.stada?statusPill(i.o.stada):""}</div>${i.t==="fund"?meetBtn(i.o):""}</div>${CHEV}</div></div>`;}
+const CHL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>', CHR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>';
+const calAdd=()=>MCP?`<div class="links"><button type="button" class="btn primary" data-act="caladd:fund">+ Fundur</button><button type="button" class="btn" data-act="caladd:tima">+ Tími</button><button type="button" class="btn" data-act="caladd:undir">+ Undirverk</button><button type="button" class="btn" data-act="caladd:verk">+ Verkefni</button></div>`:"";
+const dayTitle=x=>DAYL[x.getDay()][0].toUpperCase()+DAYL[x.getDay()].slice(1)+" "+x.getDate()+". "+MONL[x.getMonth()];
+function vCalWeek(){
+  const items=calItems(), a=mondayOf(d(calSel)), days=[...Array(7)].map((_,k)=>{const x=new Date(a); x.setDate(a.getDate()+k); return x;}), e=days[6];
+  const head=`${a.getDate()}.${a.getMonth()!==e.getMonth()?" "+MON[a.getMonth()]:""} – ${e.getDate()}. ${MON[e.getMonth()]}`;
+  return `${calModes()}<div class="cal-head"><h2>${head}</h2><button type="button" class="chipbtn" data-act="calnav:0">Í dag</button>
+    <button type="button" class="iconbtn" data-act="calnav:-1" aria-label="Fyrri vika">${CHL}</button><button type="button" class="iconbtn" data-act="calnav:1" aria-label="Næsta vika">${CHR}</button></div>
+  <div class="wkcal">${days.map(x=>{const iso=isoDay(x), l=(items.get(iso)||[]).filter(i=>!i.span), sp=(items.get(iso)||[]).filter(i=>i.span);
+    return `<section class="wkday${iso===isoDay(today)?" now":""}"><button type="button" class="wkh" data-act="calday:${iso}"><b>${x.getDate()}</b><span>${DAYL[x.getDay()]}</span></button>
+    <div class="wkitems">${l.length?l.map(i=>`<a class="wki" ${tapAttr(i.open.split(":")[0],i.open.slice(i.open.indexOf(":")+1))} style="--c:${CALC[i.t]||"var(--b2)"}"><span class="wkt">${hhmm(i.when)||esc(i.kind)}</span>${esc(i.title)}</a>`).join(""):`<span class="wke">${sp.length?esc(sp.map(i=>i.title).join(", "))+" í gangi":"–"}</span>`}</div></section>`;}).join("")}</div>
+  ${calAdd()}`;
+}
+function vCalDay(){
+  const items=calItems(), x=d(calSel), list=items.get(calSel)||[];
+  const tl=faerslur().filter(e=>String(e.date||"").slice(0,10)===calSel).sort((a,b)=>String(a.fra||"99").localeCompare(String(b.fra||"99")));
+  return `${calModes()}<div class="cal-head"><h2>${dayTitle(x)}${calSel===isoDay(today)?" · í dag":""}</h2><button type="button" class="chipbtn" data-act="calnav:0">Í dag</button>
+    <button type="button" class="iconbtn" data-act="calnav:-1" aria-label="Fyrri dagur">${CHL}</button><button type="button" class="iconbtn" data-act="calnav:1" aria-label="Næsti dagur">${CHR}</button></div>
+  ${list.length?`<div class="list">${list.map(calCard).join("")}</div>`:`<div class="empty">Ekkert á dagskrá.</div>`}
+  ${tl.length?`<div class="viewtitle">Tímaskráning · ${hrs(tl.reduce((a,e)=>a+(+e.timar||0),0))}</div>${llist(tl.map(e=>lrow("time:"+e.id,{title:esc(cleanLys(e.lysing)),sub:esc([e.fra?e.fra+(e.til?"–"+e.til:""):"",e.nr].filter(Boolean).join(" · ")),right:`<span class="lc">${esc(hrs(e.timar))}</span>`})))}`:""}
+  ${calAdd()}`;
+}
 function vCal(){
+  if(calMode==="v") return vCalWeek(); if(calMode==="d") return vCalDay();
   const items=calItems(), y=calMonth.getFullYear(), mo=calMonth.getMonth(), first=new Date(y,mo,1), off=(first.getDay()+6)%7;
   const start=new Date(y,mo,1-off), cells=[]; for(let i=0;i<42;i++){const x=new Date(start); x.setDate(start.getDate()+i); cells.push(x);}
   const rows=cells[35].getMonth()!==mo?35:42;
@@ -549,7 +606,7 @@ function vCal(){
   const sel=d(calSel), list=items.get(calSel)||[];
   const card=i=>`<div class="card tap${i.done?" compact":""}" ${tapAttr(i.open.split(":")[0],i.open.slice(i.open.indexOf(":")+1))}><div class="row"><div class="grow"><div class="kind">${esc(i.kind)}${hhmm(i.when)?" · kl. "+hhmm(i.when):""}</div><div class="t">${esc(i.title)}</div>
     <div class="meta">${i.nr?`<span class="nr">${esc(i.nr)}</span>`:""}${i.o?.stadsetning?`<span>📍 ${esc(i.o.stadsetning)}</span>`:""}${i.t==="skil"&&i.o?.stada?statusPill(i.o.stada):""}</div>${i.t==="fund"?meetBtn(i.o):""}</div>${CHEV}</div></div>`;
-  return `<div class="cal-head"><h2>${MONL[mo][0].toUpperCase()+MONL[mo].slice(1)} ${y!==today.getFullYear()?y:""}</h2>
+  return `${calModes()}<div class="cal-head"><h2>${MONL[mo][0].toUpperCase()+MONL[mo].slice(1)} ${y!==today.getFullYear()?y:""}</h2>
     <button type="button" class="chipbtn" data-act="calnav:0">Í dag</button>
     <button type="button" class="iconbtn" data-act="calnav:-1" aria-label="Fyrri mánuður">${chevL}</button><button type="button" class="iconbtn" data-act="calnav:1" aria-label="Næsti mánuður">${chevR}</button></div>
   <div class="cal">${["má","þr","mi","fi","fö","la","su"].map(x=>`<div class="dow">${x}</div>`).join("")}${cells.slice(0,rows).map(dayCell).join("")}</div>
@@ -842,6 +899,9 @@ function doAct(act,el){const [k,...r]=act.split(":");
   if(k==="later"){showLater=true; render(); return;}
   if(k==="vskf"){vskFilter=r.join(":"); render(); return;}
   if(k==="cal"){calSel=r[0]; const x=d(calSel); if(x.getMonth()!==calMonth.getMonth()) calMonth=new Date(x.getFullYear(),x.getMonth(),1); render(); return;}
+  if(k==="calmode"){calMode=r[0]; try{localStorage.setItem("aera-calmode",calMode);}catch(e){} render(); return;}
+  if(k==="calday"){calSel=r[0]; calMode="d"; try{localStorage.setItem("aera-calmode","d");}catch(e){} render(); return;}
+  if(k==="calnav"&&calMode!=="m"){const n=+r[0]; if(!n) calSel=isoDay(today); else {const x=d(calSel); x.setDate(x.getDate()+n*(calMode==="v"?7:1)); calSel=isoDay(x);} calMonth=new Date(d(calSel).getFullYear(),d(calSel).getMonth(),1); render(); return;}
   if(k==="calnav"){const n=+r[0]; if(!n){calMonth=new Date(today.getFullYear(),today.getMonth(),1); calSel=isoDay(today);} else {calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+n,1); const s=d(calSel); if(s.getMonth()!==calMonth.getMonth()||s.getFullYear()!==calMonth.getFullYear()) calSel=isoDay(calMonth);} render(); return;}
   if(k==="caladd"){kind=r[0]; PREFILL={date:calSel}; openSheet(); return;}
   if(k==="add"){kind=r[0]; openSheet(); return;}
@@ -925,8 +985,17 @@ function drawMenu(){
   const cur=TABDEF.find(t=>t[0]===tab)||(tab==="leit"?["leit","Leit",IC('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>')]:TABDEF[0]), c=menuCounts(), late=S?upcoming().filter(i=>daysTo(i.when)<0).length:0;
   document.getElementById("mico").innerHTML=cur[2]; document.getElementById("mlab").textContent=cur[1];
   const b=document.getElementById("mbadge"); b.hidden=!(late&&tab!=="yfirlit"); b.textContent=late;
-  document.getElementById("sitems").innerHTML=document.getElementById("mitems").innerHTML=TABDEF.map(([k,l,ic])=>`<button type="button" class="tab" role="menuitem" data-tab="${k}"${k===tab?' aria-current="page"':""}>${ic}<span class="tl">${l}</span><span class="tc">${esc(c[k]||"")}</span></button>`).join("");
+  sideExtra(); document.getElementById("sitems").innerHTML=document.getElementById("mitems").innerHTML=TABDEF.map(([k,l,ic])=>`<button type="button" class="tab" role="menuitem" data-tab="${k}"${k===tab?' aria-current="page"':""}>${ic}<span class="tl">${l}</span><span class="tc">${esc(c[k]||"")}</span></button>`).join("");
 }
+function sideExtra(){const el=document.getElementById("sextra"); if(!el||!S) return; const k=klukka(); let h="";
+  if(k){const q=findProj(k.pid); h+=`<div class="sx-k"><div class="sx-h">⏱ Klukka í gangi</div><div class="sx-t">${esc(q?.nafn||"")}</div><b class="kt" data-start="${esc(k.start)}">${elapsed(k)}</b><button type="button" class="btn primary" onclick="stopKlukka()">Stoppa og skrá</button></div>`;}
+  else if(MCP) h+=`<button type="button" class="btn sx-start" onclick="kind='tima';PREFILL={timer:true};openSheet()">▶ Byrja klukku</button>`;
+  const nx=upcoming().filter(i=>daysTo(i.when)>=0).slice(0,3);
+  if(nx.length) h+=`<div class="sx-h">Næst á dagskrá</div>${nx.map(i=>`<a class="sx-i" ${tapAttr(i.open.split(":")[0],i.open.slice(i.open.indexOf(":")+1))}><span>${esc(i.title)}</span><small>${esc(rel(daysTo(i.when)))}${hhmm(i.when)?" · "+hhmm(i.when):""}</small></a>`).join("")}`;
+  const act=active().slice(0,6); if(act.length) h+=`<div class="sx-h">Verkefni í gangi</div>${act.map(p=>`<a class="sx-i" ${tapAttr("verk",p.id)}><span><span class="nr">${esc(p.nr)}</span> ${esc(p.stutt)}</span></a>`).join("")}`;
+  h+=`<div class="sx-h">Vikan</div><div class="sx-w"><b>${num(weekSum(0))}</b> klst. í vikunni · <b>${num(periodSum(curPeriod()))}</b> á tímabili</div>`;
+  el.innerHTML=h;}
+document.getElementById("sextra").addEventListener("click",e=>{const t=e.target.closest("[data-open]"); if(t){e.preventDefault(); const k=t.dataset.open; DETAIL=null; openDetail(k);}});
 function openMenu(){drawMenu(); menuwrap.hidden=false; mbtn.setAttribute("aria-expanded","true"); document.querySelector('#mitems [aria-current]')?.focus();}
 function closeMenu(){menuwrap.hidden=true; mbtn.setAttribute("aria-expanded","false");}
 mbtn.addEventListener("click",()=>menuwrap.hidden?openMenu():closeMenu());
@@ -988,6 +1057,28 @@ const projOpts=(all)=>{const c=ctxProj()?.p; const ps=verkefni().slice().sort((a
   return a.map(o).join("")+(d.length?`<optgroup label="Afhent">${d.map(o).join("")}</optgroup>`:"");};
 function nextProjNr(){const y=today.getFullYear();const n=verkefni().filter(p=>p.nr.startsWith(y+"-")).map(p=>+p.nr.split("-")[1]||0);return y+"-"+pad((n.length?Math.max(...n):0)+1);}
 function nextSubNr(p){const n=(p.undirverk||[]).map(u=>+String(u.nr).split("-")[2]||0);return p.nr+"-"+pad((n.length?Math.max(...n):0)+1);}
+const FORM_TITLE={tima:"Skrá tíma",fund:"Nýr fundur",undir:"Nýtt undirverk",verk:"Nýtt verkefni",vsk:"Nýr viðskiptavinur"};
+const FORM_REQ={tima:["f-proj","f-desc"],fund:["f-name","f-date","f-time"],undir:["f-proj","f-name"],verk:["f-name"],vsk:["f-name"]};
+const FORM_KEEP={tima:null,fund:["f-name","f-date","f-proj"],undir:["f-proj","f-name","f-nr"],verk:["f-name","f-client"],vsk:["f-name","role"]};
+function enhanceForm(){
+  const f=document.getElementById("addf"); if(!f) return;
+  document.getElementById("sheet-h").textContent=FORM_TITLE[kind]||"Bæta við";
+  const star=lab=>{if(lab&&!lab.querySelector(".req")) lab.insertAdjacentHTML("beforeend",' <span class="req" aria-hidden="true">*</span>');};
+  const labText=el=>{const l=el?.closest("label"); if(!l) return null; const span=document.createElement("span"); span.className="lbl"; while(l.firstChild&&l.firstChild.nodeType===3){span.append(l.firstChild);} l.prepend(span); return span;};
+  (FORM_REQ[kind]||[]).forEach(id=>{const el=document.getElementById(id); if(el){el.setAttribute("aria-required","true"); star(labText(el));}});
+  if(kind==="tima"){const dk=f.querySelector(".daychips")?.previousElementSibling; star(dk); const th=f.querySelector(".three");
+    if(th){const k=document.createElement("div"); k.className="kind"; k.style.marginBottom="-4px"; k.innerHTML='Tími: frá–til eða fjöldi klst. <span class="req">*</span>'; th.before(k);}}
+  if(kind==="vsk"){const r=f.querySelector('input[name="role"]')?.closest("div")?.previousElementSibling; star(r);}
+  const keep=FORM_KEEP[kind];
+  if(keep){const more=document.createElement("details"); more.className="more"; more.innerHTML='<summary>Fleiri valkostir</summary><div class="moreb"></div>'; const box=more.querySelector(".moreb");
+    [...f.children].forEach(ch=>{if(ch.id==="f-msg"||ch.classList.contains("actions")||ch.matches("p.hint")&&!ch.id) return;
+      const isKeep=keep.some(k=>ch.id===k||ch.querySelector?.(`#${k}, input[name="${k}"]`)||(k==="f-client"&&ch.id==="f-client-new"));
+      if(!isKeep) box.append(ch);});
+    if(box.children.length){f.querySelector("#f-msg").before(more);
+      if([...box.querySelectorAll("input:not([type=checkbox]),textarea")].some(i=>i.value)) more.open=true;}}
+  const note=document.createElement("p"); note.className="hint reqnote"; note.innerHTML='<span class="req">*</span> þarf að fylla út'; f.querySelector("#f-msg").before(note);
+  const first=f.querySelector("input:not([type=hidden]):not([type=checkbox]),select"); if(first&&!("ontouchstart" in window)) setTimeout(()=>first.focus(),50);
+}
 function drawForm(){
   const T={tima:"Tími",fund:"Fundur",undir:"Undirverk",verk:"Verkefni",vsk:"Viðskiptavinur"};
   let f="";
@@ -1043,6 +1134,7 @@ function drawForm(){
   wireVskSelects(sheet);
   if(PREFILL?.date&&kind!=="tima"){const t={fund:"f-date",verk:"f-ps",undir:"f-date"}[kind]; const el=t&&document.getElementById(t); if(el) el.value=PREFILL.date;
     const hint=document.createElement("p"); hint.className="hint"; hint.textContent={fund:"Dagsetning fundar sett á ",verk:"„Verk hefst“ sett á ",undir:"Skiladagur settur á ",tima:"Dagsetning sett á "}[kind]?.concat(fmtDate(PREFILL.date)+" úr dagatalinu.")||""; if(hint.textContent) document.getElementById("addf").prepend(hint);}
+  enhanceForm();
   document.getElementById("addf").onsubmit=save;
 }
 const buyerOpts=sel=>[...new Set([...VERKKAUPAR,...verkefni().map(p=>p.verkkaupi).filter(Boolean)])].map(v=>`<option${v===sel?" selected":""}>${esc(v)}</option>`).join("");
