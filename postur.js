@@ -191,7 +191,7 @@
   }
 
   /* Undirskrift (íslenska og enska) – stillingar.undirskrift */
-  const SIG = () => ({ kvedja: "Kveðja / Best regards", nafn: MS.user()?.name || "Dagur Fannar Möller", titillIS: "Eigandi", titillEN: "Owner", fyrirtaeki: "AERA Studio", netfang: MS.user()?.email || "dagur@sonik.is", simi: "", vefur: "", ...(CFG().undirskrift || {}) });
+  const SIG = () => ({ kvedja: "Kveðja / Best regards", nafn: MS.user()?.name || "Dagur Fannar Möller", titillIS: "Eigandi", titillEN: "Owner", fyrirtaeki: "AERA Studio", netfang: "aerastudioice@gmail.com", simi: "", vefur: "", ...(CFG().undirskrift || {}) });
   const LOGO_URL = "https://aerastudio.github.io/aera-app/icons/sig-logo.png", LOGO_CID = "aeralogo@aerastudio";
   window.poSigHTML = (logo, o) => { const g = { ...SIG(), ...(o || {}) }, E = x => esc(x || ""), web = String(g.vefur || "").replace(/^https?:\/\//, "");
     return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Calibri,Arial,Helvetica,sans-serif;color:#1c2126">
