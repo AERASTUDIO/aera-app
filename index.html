@@ -426,6 +426,8 @@ body.haspnew .fab{display:none!important}
 .rkgs{display:flex;flex-direction:column;gap:8px}.rkg{border:1px solid var(--line);border-radius:12px;overflow:hidden}.rkg>summary{list-style:none;cursor:pointer}.rkg>summary::-webkit-details-marker{display:none}
 .rkgh{border-bottom:0!important;padding:11px 12px!important}.rkg[open] .rkgh{border-bottom:1px solid var(--line)!important}.rkgb{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}.rkrate{font-size:13px}
 .rkgt{color:var(--muted);font-weight:500}
+.dbadge{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--dc);color:#fff;font-weight:600;font-size:13px;flex:none}
+.skseg{flex-wrap:wrap}.skseg button{font-size:13px}
 .seg2{margin:0 0 4px}.seg2 button{font-size:13.5px}
 .phead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;margin-bottom:2px}.ptitle{margin:0;font-size:24px;font-weight:500;letter-spacing:-0.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pnew{width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .hello{margin:22px 0 2px;font-size:28px;font-weight:500;letter-spacing:-0.03em}
@@ -515,7 +517,8 @@ const TABDEF=[
   ["undir","Undirverk",IC('<path d="M4 6.5l1.6 1.6L8.5 5M4 12.5l1.6 1.6 2.9-3.1M4 18.5l1.6 1.6 2.9-3.1M11.5 7h8.5M11.5 13h8.5M11.5 19h8.5"/>')],
   ["fundir","Fundir",IC('<circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="9.5" r="2.5"/><path d="M2.5 19c.6-3 2.8-4.5 5.5-4.5s4.9 1.5 5.5 4.5M14 15c2.8-.6 6 .6 7 4"/>')],
   ["timar","Tímaskráning",IC('<circle cx="12" cy="12.5" r="8"/><path d="M12 8v5l3 2M9.5 2.5h5"/>')],
-  ["vsk","Viðskiptavinir",IC('<path d="M4 20.5V5.5a1.5 1.5 0 0 1 1.5-1.5h7A1.5 1.5 0 0 1 14 5.5v15M14 10h4.5a1.5 1.5 0 0 1 1.5 1.5v9M2.5 20.5h19M7.5 8h3M7.5 11.5h3M7.5 15h3M16.5 14h1M16.5 17h1"/>')]];
+  ["vsk","Viðskiptavinir",IC('<path d="M4 20.5V5.5a1.5 1.5 0 0 1 1.5-1.5h7A1.5 1.5 0 0 1 14 5.5v15M14 10h4.5a1.5 1.5 0 0 1 1.5 1.5v9M2.5 20.5h19M7.5 8h3M7.5 11.5h3M7.5 15h3M16.5 14h1M16.5 17h1"/>')],
+  ["skjol","Skjöl",IC('<path d="M7 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-15.5a1 1 0 0 1 1-1z"/><path d="M14 3.5V8h4.5M9 12.5h6M9 16h6"/>')]];
 TABDEF.push(["stillingar","Stillingar",IC('<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>')]);
 const TABS=TABDEF.map(t=>t[0]);
 const DTYPES=["Draft","Spec","PRD","RFC","Design Review","Decision","Strategy","Guideline","Runbook","Postmortem","OKRs"], DSTAT=["Not started","In progress","Done"];
@@ -539,7 +542,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.21"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.22"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
@@ -1055,7 +1058,7 @@ function dVerk(p){
   if(DTAB==="fundir") body=`${MCP?`<div class="links"><button type="button" class="btn primary" data-act="add:fund">+ Fundur</button></div>`:""}
     ${upF.length?`<div class="viewtitle">Framundan · ${upF.length}</div>${llist(upF.map(meetRowL))}`:""}${pastF.length?`<div class="viewtitle">Liðnir · ${pastF.length}</div>${llist(pastF.map(meetRowL))}`:""}
     ${fs.length?"":`<div class="empty" style="margin-top:16px">Engir fundir.</div>`}`;
-  if(DTAB==="skrar") body=pending&&!fold&&!(window.MS&&MS.on())?`<div class="empty" style="margin-top:16px">Mappa í OneDrive bíður stofnunar. Hún stofnast sjálfkrafa þegar appið er tengt Microsoft.${window.msMissing?msMissing():""}</div>`:skrarHTML(p);
+  if(DTAB==="skrar") body=(window.skDocsFor?skDocsFor(p.id):"")+(pending&&!fold&&!(window.MS&&MS.on())?`<div class="empty" style="margin-top:16px">Mappa í OneDrive bíður stofnunar. Hún stofnast sjálfkrafa þegar appið er tengt Microsoft.${window.msMissing?msMissing():""}</div>`:skrarHTML(p));
   if(DTAB==="timar") body=timesPage(tl,"kstart:"+esc(p.id));
   if(DTAB==="stillingar") body=`<div class="viewtitle">Staða</div>${statRow("verk",p.id,STODUR().map(x=>x.n),p.stada)}
     <div class="viewtitle" style="margin-top:6px">Upplýsingar</div>${settingsCard([
@@ -1141,7 +1144,7 @@ function dSkjal(x){
 }
 function detailHTML(){
   const i=DETAIL.indexOf(":"), t=DETAIL.slice(0,i), id=DETAIL.slice(i+1);
-  if(t==="skjal"){const x=findSkjal(id); return x&&dSkjal(x);}
+  if(t==="skjal"){const x=findSkjal(id); return x&&(x.snid&&window.dSkjalNy?dSkjalNy(x):dSkjal(x));}
   if(t==="vsk"){const c=findVsk(id); return c&&dVsk(c);}
   if(t==="verk"){const p=findProj(id); return p&&dVerk(p);}
   if(t==="sub"){const r=findSub(id); return r&&dSub(r.u,r.p);}
@@ -1178,6 +1181,7 @@ viewEl.addEventListener("change",e=>{if(e.target.id==="timfilter"){timFilter=e.t
 function doAct(act,el){const [k,...r]=act.split(":");
   if(k.startsWith("ms")&&window.msAct){msAct(k,r,el); return;}
   if(k.startsWith("rk")&&window.rkAct){rkAct(k,r,el); return;}
+  if(k.startsWith("sk")&&window.skAct){skAct(k,r,el); return;}
   if(k==="later"){showLater=true; render(); return;}
   if(k==="fabnew"){openFab(); return;}
   if(k==="vskf"){vskFilter=r.join(":"); render(); return;}
@@ -1216,7 +1220,7 @@ function doAct(act,el){const [k,...r]=act.split(":");
   if(k==="tab"){tab=r[0]; DETAIL=null; render(); window.scrollTo({top:0}); return;}
   if(k==="status"){const [type,id,st]=r; quickStatus(type,id,st,el);}}
 viewEl.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ") return; const t=e.target.closest?.("[data-open]"); if(t&&t===e.target){e.preventDefault();openDetail(t.dataset.open);}});
-const NEWBTN={verk:"Verkefni",undir:"Undirverk",fundir:"Fundur",timar:"Skrá tíma",vsk:"Viðskiptavinur",dagatal:"Fundur"};
+const NEWBTN={skjol:"Skjal",verk:"Verkefni",undir:"Undirverk",fundir:"Fundur",timar:"Skrá tíma",vsk:"Viðskiptavinur",dagatal:"Fundur"};
 function pageHead(){const nb=NEWBTN[tab]; if(!nb||!MCP) return ""; const t=TABDEF.find(x=>x[0]===tab)?.[1]||"";
   return `<div class="phead"><h2 class="ptitle">${esc(t)}</h2><button type="button" class="btn primary pnew" data-act="fabnew" aria-label="Nýtt: ${esc(nb)}" title="Nýtt: ${esc(nb)}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>`;}
 function render(){
@@ -1225,7 +1229,7 @@ function render(){
   if(!S){v.innerHTML=`<h2 class="big">Hleð gögnum…</h2><div class="empty">Augnablik.</div>`;return;}
   const det=DETAIL?detailHTML():null; if(DETAIL&&!det) DETAIL=null;
   document.body.classList.toggle("haspnew",!det&&!!NEWBTN[tab]&&!!MCP);
-  v.innerHTML=det||pageHead()+({yfirlit:vYfirlit,verk:vVerk,undir:vUndir,fundir:vFundir,timar:vTimar,vsk:vVsk,dagatal:vCal,leit:vLeit,stillingar:vStillingar}[tab]||vYfirlit)(); drawSync();
+  v.innerHTML=det||pageHead()+({yfirlit:vYfirlit,verk:vVerk,undir:vUndir,fundir:vFundir,timar:vTimar,vsk:vVsk,skjol:()=>window.vSkjolNy?vSkjolNy():"",dagatal:vCal,leit:vLeit,stillingar:vStillingar}[tab]||vYfirlit)(); drawSync();
   document.getElementById("foot").textContent=S.uppfaert?"Síðast breytt "+fmtDate(S.uppfaert)+(hhmm(S.uppfaert)?" kl. "+hhmm(S.uppfaert):""):"";
 }
 function setDtab(k,dir){if(k===DTAB) return; DTAB=k; try{history.replaceState({aera:DETAIL,dtab:DTAB},"");}catch(e){}
@@ -1353,7 +1357,7 @@ const menuwrap=document.getElementById("menuwrap"), mbtn=document.getElementById
 function menuCounts(){if(!S) return {};
   const up=upcoming(), late=up.filter(i=>daysTo(i.when)<0).length;
   return {yfirlit:late?"⚠ "+late:"",dagatal:(()=>{const n=(calItems().get(isoDay(today))||[]).length; return n?n+" í dag":"";})(),verk:active().length+" í gangi",undir:verkefni().flatMap(p=>(p.undirverk||[]).filter(u=>u.stada!=="Done")).length+" opin",
-    fundir:(S.fundir||[]).filter(f=>daysTo(f.date)>=0).length+" framundan",timar:num(periodSum(curPeriod()))+" klst.",vsk:String(vskList().length||"")};}
+    fundir:(S.fundir||[]).filter(f=>daysTo(f.date)>=0).length+" framundan",timar:num(periodSum(curPeriod()))+" klst.",vsk:String(vskList().length||""),skjol:(()=>{const n=window.skCount?skCount():0, t=(S.skjol||[]).filter(x=>x.snid).length; return n?n+" óflokkuð":t?String(t):"";})()};}
 function drawMenu(){
   const cur=TABDEF.find(t=>t[0]===tab)||(tab==="leit"?["leit","Leit",IC('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>')]:TABDEF[0]), c=menuCounts(), late=S?upcoming().filter(i=>daysTo(i.when)<0).length:0;
   document.getElementById("mico").innerHTML=cur[2]; document.getElementById("mlab").textContent=cur[1];
@@ -1424,7 +1428,7 @@ function deleteItem(type,id){
 }
 const TAB_KIND={undir:"undir",fundir:"fund",timar:"tima",verk:"verk",vsk:"vsk",dagatal:"fund"};
 function openSheet(){sheetwrap.hidden=false;drawForm();}
-function openFab(){if(!DETAIL&&tab==="dagatal") PREFILL={date:calSel}; if(!DETAIL&&TAB_KIND[tab]) kind=TAB_KIND[tab]; else if(DETAIL?.startsWith("vsk:")) kind="verk"; _ctxRole=vskFilter||null; openSheet();}
+function openFab(){if(!DETAIL&&tab==="skjol"&&window.skOpenNew){skOpenNew(null); return;}if(!DETAIL&&tab==="dagatal") PREFILL={date:calSel}; if(!DETAIL&&TAB_KIND[tab]) kind=TAB_KIND[tab]; else if(DETAIL?.startsWith("vsk:")) kind="verk"; _ctxRole=vskFilter||null; openSheet();}
 function closeSheet(){sheetwrap.hidden=true; sheet.closest(".sheet").classList.remove("wide"); PREFILL=null; render();}
 document.getElementById("fab").addEventListener("click",openFab);
 document.getElementById("scrim").addEventListener("click",closeSheet);
@@ -1909,5 +1913,6 @@ document.getElementById("fab").hidden=true;
 <script src="ms-app.js"></script>
 <script src="pdf.js"></script>
 <script src="reikn.js"></script>
+<script src="skjol.js"></script>
 
 </body></html>

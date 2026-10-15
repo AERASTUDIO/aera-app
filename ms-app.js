@@ -164,6 +164,26 @@
     for (const p of parts) { await mkFolder(cur, p); cur += "/" + p; }
     return MS.g(`/me/drive/root:/${encP(dir + "/" + safe(name.replace(/\.[a-z0-9]+$/i, "")) + (name.match(/\.[a-z0-9]+$/i) || [""])[0])}:/content?@microsoft.graph.conflictBehavior=${replace ? "replace" : "rename"}`, { method: "PUT", body: data, headers: { "Content-Type": type || "application/octet-stream" } });
   };
+  // Tryggja að mappa sé til (öll slóðin) og skila henni
+  async function ensureDir(dir) { const parts = dir.split("/").filter(Boolean); let cur = parts.shift(), it = null;
+    for (const p of parts) { it = await mkFolder(cur, p); cur += "/" + p; } return it || MS.g(`/me/drive/root:/${encP(cur)}`); }
+  window.msProjSub = projSub;
+  window.msStofa = async () => (await all(`/me/drive/root:/${encP("AERA/Stofa")}:/children?$select=name,folder&$top=200`)).filter(i => i.folder).map(i => i.name).sort((a, b) => a.localeCompare(b, "is"));
+  window.msSnidmat = async ext => (await all(`/me/drive/root:/${encP("AERA/Stofa/Sniðmát")}:/children?$select=id,name,file&$top=200`).catch(() => [])).filter(i => i.file && i.name.toLowerCase().endsWith(ext));
+  // Nýtt Office-skjal: afrit af sniðmáti (id í OneDrive) eða tómu skjali úr appinu
+  window.msNewOffice = async function (dir, name, ext, templateId) {
+    let blob;
+    if (templateId) { const t = await MS.g(`/me/drive/items/${templateId}`); blob = await (await fetch(t["@microsoft.graph.downloadUrl"])).blob(); }
+    else blob = await (await fetch("templates/" + { docx: "word", xlsx: "excel", pptx: "powerpoint" }[ext] + "." + ext)).blob();
+    await ensureDir(dir);
+    return MS.g(`/me/drive/root:/${encP(dir + "/" + safe(name) + "." + ext)}:/content?@microsoft.graph.conflictBehavior=rename`, { method: "PUT", body: blob, headers: { "Content-Type": "application/octet-stream" } });
+  };
+  // Færa (og/eða endurnefna) skrá í OneDrive
+  window.msMove = async function (itemId, dir, newName) {
+    const body = {}; if (dir) { const f = await ensureDir(dir); body.parentReference = { id: f.id }; } if (newName) body.name = newName;
+    body["@microsoft.graph.conflictBehavior"] = "rename";
+    const it = await MS.g(`/me/drive/items/${itemId}`, { method: "PATCH", body }); Object.keys(TREE).forEach(k => delete TREE[k]); return it;
+  };
   // Kvittun fyrir útlagðan kostnað → <verkefni>/02 Vinnuskjöl/Kvittanir (eða Óflokkað/Kvittanir)
   // Almenn vistun: mappa (slóð frá rót OneDrive) búin til ef hún er ekki til, skrá vistuð þar.
   window.msVista = async function (dir, name, data, type) {
