@@ -56,6 +56,7 @@
   const standalone = () => navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
 
   async function login() {
+    if (window.AERA_DEMO) throw new Error("Microsoft-tenging er ekki í boði í sýniútgáfunni.");
     const verifier = rnd(48), state = rnd(16);
     const useRedirect = standalone();
     // Sprettiglugginn er opnaður strax (áður en beðið er), annars lokar vafrinn á hann.

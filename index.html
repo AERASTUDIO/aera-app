@@ -3,6 +3,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="AERA">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>AERA Studio</title>
+<script>/* Sýniútgáfa (?demo): tilbúin gögn, engin innskráning; staðbundnar stillingar fara í sessionStorage svo raunverulega appið á sama tæki verði ekki fyrir áhrifum. */
+window.AERA_DEMO=new URLSearchParams(location.search).has("demo");
+if(window.AERA_DEMO){try{Object.defineProperty(window,"localStorage",{value:window.sessionStorage,configurable:true});}catch(e){}}</script>
 <script src="ms.js"></script>
 </head><body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -519,7 +522,7 @@ body.hasdock .fab{bottom:calc(132px + env(safe-area-inset-bottom,0px))}
 <div class="toast" id="toast" hidden></div>
 
 <script src="xlsx.js"></script>
-<script type="module" src="firebase.js"></script>
+<script type="module">if(window.AERA_DEMO) import("./demo.js"); else import("./firebase.js");</script>
 <script>
 /* ---------- Þema: sjálfvirkt (ljóst á tölvu, dökkt í síma), ljóst eða dökkt ---------- */
 let THEME="auto"; try{THEME=localStorage.getItem("aera-theme")||"auto";}catch(e){}
@@ -571,7 +574,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.36"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.37"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
@@ -1282,6 +1285,7 @@ viewEl.addEventListener("touchend",e=>{if(swX===null) return; const dx=e.changed
   const n=dx<0?i+1:i-1; if(n>=0&&n<ks.length) setDtab(ks[n],dx<0?1:-1);},{passive:true});
 /* Smellt á merkið → Yfirlit */
 function goHome(){DETAIL=null; DTAB="yfirlit"; tab="yfirlit"; try{history.replaceState(null,"");}catch(e){} try{localStorage.setItem("aera-tab",tab)}catch(e){} closeMenu?.(); render(); window.scrollTo({top:0});
+  if(window.AERA_DEMO) return; // sýniútgáfa: ekki endurhlaða (þá hyrfu breytingar)
   // Endurhlaða appið: athuga fyrst hvort ný útgáfa sé komin, svo sækja allt upp á nýtt
   document.querySelectorAll("header .brand h1, .side .logo").forEach(el=>el.classList.add("reloading"));
   const go=()=>location.reload(); const t=setTimeout(go,1500);
@@ -1497,8 +1501,8 @@ document.getElementById("scrim").addEventListener("click",()=>sheetHasWork()?min
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!sheetwrap.hidden) (sheetHasWork()?minimizeSheet:closeSheet)();});
 /* Opna síðu í nýjum glugga (t.d. póst við hliðina á verkefni) */
 let _hashDone=false;
-function openFromHash(){if(_hashDone) return; _hashDone=true; const m=location.hash.match(/^#open=(.+)$/); if(!m) return; const k=decodeURIComponent(m[1]); try{history.replaceState(null,"",location.pathname);}catch(e){} const t=k.split(":")[0]; if(t&&TABDEF.some(x=>x[0]===({post:"postur",verk:"verk",sub:"undir",fund:"fundir",time:"timar",kostn:"timar",reikn:"timar",skjal:"skjol",vsk:"vsk"}[t]))) tab={post:"postur",verk:"verk",sub:"undir",fund:"fundir",time:"timar",kostn:"timar",reikn:"timar",skjal:"skjol",vsk:"vsk"}[t]; openDetail(k);}
-function openNewWin(){if(!DETAIL) return; window.open(location.pathname+"#open="+encodeURIComponent(DETAIL),"_blank","noopener");}
+function openFromHash(){if(_hashDone) return; _hashDone=true; const m=location.hash.match(/^#open=(.+)$/); if(!m) return; const k=decodeURIComponent(m[1]); try{history.replaceState(null,"",location.pathname+location.search);}catch(e){} const t=k.split(":")[0]; if(t&&TABDEF.some(x=>x[0]===({post:"postur",verk:"verk",sub:"undir",fund:"fundir",time:"timar",kostn:"timar",reikn:"timar",skjal:"skjol",vsk:"vsk"}[t]))) tab={post:"postur",verk:"verk",sub:"undir",fund:"fundir",time:"timar",kostn:"timar",reikn:"timar",skjal:"skjol",vsk:"vsk"}[t]; openDetail(k);}
+function openNewWin(){if(!DETAIL) return; window.open(location.pathname+location.search+"#open="+encodeURIComponent(DETAIL),"_blank","noopener");}
 function ctxProj(){if(!DETAIL) return null; const i=DETAIL.indexOf(":"),t=DETAIL.slice(0,i),id=DETAIL.slice(i+1);
   if(t==="verk") return {p:findProj(id)}; if(t==="sub"){const r=findSub(id); return r&&{p:r.p,u:r.u};} if(t==="fund"){const f=findFund(id); return {p:fundProj(f)};}
   if(t==="skjal") return {p:skjalProj(findSkjal(id))}; return null;}

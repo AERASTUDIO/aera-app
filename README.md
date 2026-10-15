@@ -6,6 +6,7 @@ Símaapp og tölvuapp AERA Studio fyrir verkefni, undirverk, fundi, tímaskráni
 - **Hýsing:** GitHub Pages (útgáfa birtist sjálfkrafa við hverja breytingu á `main`)
 - **Gögn:** Firebase Firestore, verkefnið `aera-app-cfdb3`, skjalið `app/state`
 - **Innskráning:** Google, aðeins aerastudioice@gmail.com (sjá `firebase-config.js` og `firestore.rules`)
+- **Sýniútgáfa:** https://aerastudio.github.io/aera-app/?demo – opin öllum, tilbúin gögn úr `demo.js`, engin tenging við Firestore eða Microsoft
 
 ## Skrár
 | Skrá | Hlutverk |
@@ -14,6 +15,7 @@ Símaapp og tölvuapp AERA Studio fyrir verkefni, undirverk, fundi, tímaskráni
 | `firebase.js` | Innskráning og tenging við Firestore |
 | `firebase-config.js` | Opinber auðkenni Firebase-verkefnisins og leyfð netföng |
 | `firestore.rules` | Aðgangsreglur gagnagrunnsins (afrit; virku reglurnar eru í Firebase Console) |
+| `demo.js` | Sýniútgáfa (`?demo`): uppspunnin sýnigögn í minni vafrans, breytingar vistast ekki |
 | `sw.js` | Geymir appið á tækinu svo það virki án nets – hækka `VERSION` við breytingar |
 | `manifest.webmanifest`, `icons/` | Nafn og tákn þegar appið er sett á heimaskjá |
 
