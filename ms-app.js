@@ -158,7 +158,19 @@
   async function upload(path, data, type) {
     return MS.g(`/me/drive/root:/${encP(path)}:/content?@microsoft.graph.conflictBehavior=rename`, { method: "PUT", body: data, headers: { "Content-Type": type || "application/octet-stream" } });
   }
+  // Vista skrá í möppu (slóðin stofnuð ef þarf). replace=true skrifar yfir skrá með sama nafni.
+  window.msSaveFile = async function (dir, name, data, type, replace) {
+    const parts = dir.split("/").filter(Boolean); let cur = parts.shift();
+    for (const p of parts) { await mkFolder(cur, p); cur += "/" + p; }
+    return MS.g(`/me/drive/root:/${encP(dir + "/" + safe(name.replace(/\.[a-z0-9]+$/i, "")) + (name.match(/\.[a-z0-9]+$/i) || [""])[0])}:/content?@microsoft.graph.conflictBehavior=${replace ? "replace" : "rename"}`, { method: "PUT", body: data, headers: { "Content-Type": type || "application/octet-stream" } });
+  };
   // Kvittun fyrir útlagðan kostnað → <verkefni>/02 Vinnuskjöl/Kvittanir (eða Óflokkað/Kvittanir)
+  // Almenn vistun: mappa (slóð frá rót OneDrive) búin til ef hún er ekki til, skrá vistuð þar.
+  window.msVista = async function (dir, name, data, type) {
+    const parts = dir.split("/"); for (let i = 1; i < parts.length; i++) await mkFolder(parts.slice(0, i).join("/"), parts[i]);
+    const it = await upload(dir + "/" + safe(name.replace(/\.[a-z0-9]+$/i, "")) + (name.match(/\.[a-z0-9]+$/i) || [""])[0], data, type);
+    return { url: it.webUrl, id: it.id };
+  };
   window.msKvittun = async function (file, p, date, desc) {
     const base = await projSub(p, "02", "02 Vinnuskjöl");
     await mkFolder(base, "Kvittanir");
