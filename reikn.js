@@ -251,12 +251,12 @@
   /* ---------- Síða reiknings ---------- */
   window.rkDetail = function (R) {
     const greitt = R.stada === "Greitt", late = !greitt && daysTo(R.gjalddagi) < 0, ps = pidsOf(R).map(findProj).filter(Boolean), on = window.MS && MS.on();
-    return backBar() + `<div class="kicker"><span class="kind">Reikningur</span><span class="pill ${late ? "late" : ""}">${greitt ? "Greitt" : late ? "Kominn fram yfir gjalddaga" : "Ógreitt"}</span></div>
+    return backBar() + `<div class="kicker"><span class="kind">Reikningur</span><span class="pill ${late ? "late" : ""}">${greitt ? "Greitt" : late ? "Kominn fram yfir gjalddaga" : "Ógreitt"}</span>${R.sent ? `<span class="pill">Sendur ${esc(dIS(R.sent))}</span>` : ""}</div>
       <h2 class="big" style="margin-top:6px">Nr. ${esc(String(R.nr))} · ${esc(R.kaupandi?.name || "")}</h2>
       <p class="sub">${ps.map(projLink).join(", ")}${ps.length ? " · " : ""}${esc(kr(R.tot))} með VSK</p>
       <div class="links"><button type="button" class="btn primary" data-act="rkpdf:${esc(R.id)}">Sækja PDF</button>
         ${R.pdfUrl ? `<a class="btn" href="${esc(R.pdfUrl)}" target="_blank" rel="noopener">📁 Í OneDrive</a>` : on ? `<button type="button" class="btn" data-act="rkod:${esc(R.id)}">Vista í OneDrive</button>` : ""}
-        <button type="button" class="btn" data-act="rkprint:${esc(R.id)}">Prenta</button><button type="button" class="btn" data-act="rkxlsx:${esc(R.id)}">Excel</button>
+        ${on ? `<button type="button" class="btn" data-act="rksend:${esc(R.id)}">✉ Senda${R.sent ? " aftur" : ""}</button>` : ""}<button type="button" class="btn" data-act="rkprint:${esc(R.id)}">Prenta</button><button type="button" class="btn" data-act="rkxlsx:${esc(R.id)}">Excel</button>
         <button type="button" class="btn" data-act="rkpaid:${esc(R.id)}">${greitt ? "Merkja ógreitt" : "✓ Merkja greitt"}</button><button type="button" class="btn danger" data-act="rkdel:${esc(R.id)}">Eyða</button></div>
       <div class="invwrap">${invoiceHTML(R)}</div>
       ${R.pdfUrl ? `<p class="hint" style="margin-top:8px">PDF vistað í OneDrive: AERA › Stofa › Reikningar › ${esc(String(R.dags || "").slice(0, 4))}.${on ? ` <a class="plink" data-act="rkod:${esc(R.id)}">Vista aftur</a>` : ""}</p>` : ""}`;
@@ -297,6 +297,18 @@
     if (k === "rknew") { openForm(id || null); return; }
     if (k === "rkpdf") { const R = findR(id); if (R) downloadPdf(R); return; }
     if (k === "rkod") { toast("Vista í OneDrive…"); saveToOneDrive(id, false); return; }
+    if (k === "rksend") { const R = findR(id); if (!R || !window.poCompose) return; const bytes = invoicePdf(R), s = R.seljandi || {};
+      poCompose({ to: R.kaupandi?.netfang || "", subject: `Reikningur nr. ${R.nr} frá ${s.nafn || "AERA Studio"}`, pid: pidsOf(R)[0] || null,
+        body: `Góðan dag,
+
+Meðfylgjandi er reikningur nr. ${R.nr} að upphæð ${kr(R.tot)} með gjalddaga ${dIS(R.gjalddagi)}.${s.banki ? `
+Greiðist inn á reikning ${s.banki}${s.kt ? ", kt. " + s.kt : ""}.` : ""}
+
+Kveðja,
+${MS.user()?.name || ""}
+${s.nafn || "AERA Studio"}`,
+        atts: [{ name: fileBase(R) + ".pdf", type: "application/pdf", size: bytes.length, data: bytes }],
+        onSent: () => saveSnapshot(st => { const q = (st.reikningar || []).find(x => x.id === id); if (q) q.sent = isoDay(new Date()); }) }); return; }
     if (k === "rkprint") { const R = findR(id); if (R) printInv(R); return; }
     if (k === "rkxlsx") { const R = findR(id); if (R) invXlsx(R); return; }
     if (k === "rkpaid") { saveSnapshot(s => { const q = (s.reikningar || []).find(x => x.id === id); if (q) { q.stada = q.stada === "Greitt" ? "Ógreitt" : "Greitt"; q.greitt = q.stada === "Greitt" ? isoDay(new Date()) : null; } }).then(() => toast("Staða reiknings uppfærð")); return; }

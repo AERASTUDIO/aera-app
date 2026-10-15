@@ -4,7 +4,8 @@
   const CFG = {
     clientId: "771b0263-4629-4c0d-baef-f95688c59aca",
     tenant: "1ed6735b-fd33-4b11-ad13-3f1a6e11c0f9",
-    scopes: "openid profile offline_access User.Read Files.ReadWrite Mail.Read"
+    scopes: "openid profile offline_access User.Read Files.ReadWrite Mail.Read Mail.Send",
+    base: "openid profile offline_access User.Read Files.ReadWrite Mail.Read"
   };
   const REDIRECT = location.hostname === "aerastudio.github.io" ? "https://aerastudio.github.io/aera-app/" : location.origin + location.pathname;
   const AUTH = `https://login.microsoftonline.com/${CFG.tenant}/oauth2/v2.0`;
@@ -32,7 +33,7 @@
 
   async function tokenReq(params) {
     const r = await fetch(AUTH + "/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ client_id: CFG.clientId, scope: CFG.scopes, ...params }) });
+      body: new URLSearchParams({ client_id: CFG.clientId, scope: params.grant_type === "refresh_token" ? (tok?.granted || CFG.base) : CFG.scopes, ...params }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error_description || j.error || ("Villa " + r.status));
     const now = Date.now(), prev = tok || {};
@@ -40,7 +41,8 @@
     tok = { access: j.access_token, exp: now + (j.expires_in || 3600) * 1000,
             refresh: j.refresh_token || prev.refresh,
             rexp: j.refresh_token ? now + 23.5 * 3600 * 1000 : prev.rexp, // SPA-lyklar gilda í 24 klst.
-            name: id.name || prev.name, email: id.preferred_username || prev.email };
+            name: id.name || prev.name, email: id.preferred_username || prev.email,
+            granted: j.scope ? "openid profile offline_access " + j.scope.split(" ").map(x => x.replace(/^https:\/\/graph\.microsoft\.com\//i, "")).join(" ") : prev.granted };
     ls.set(KEY, tok); fire(); return tok;
   }
 
@@ -116,6 +118,8 @@
     on: () => !!(tok && ((tok.access && tok.exp > Date.now()) || (tok.refresh && (!tok.rexp || tok.rexp > Date.now())))),
     user: () => tok ? { name: tok.name, email: tok.email } : null,
     hadLogin: () => !!tok,
+    // Hefur aðgangurinn veitt tiltekna heimild (t.d. "Mail.Send")?
+    can: sc => (" " + (tok?.granted || "") + " ").toLowerCase().includes(" " + sc.toLowerCase() + " "),
     logout() { tok = null; ls.set(KEY, null); fire(); },
     lastError: null, expired: false
   };

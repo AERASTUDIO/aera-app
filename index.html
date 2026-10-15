@@ -546,7 +546,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.25"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.26"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
@@ -1226,7 +1226,7 @@ function doAct(act,el){const [k,...r]=act.split(":");
   if(k==="tab"){tab=r[0]; DETAIL=null; render(); window.scrollTo({top:0}); return;}
   if(k==="status"){const [type,id,st]=r; quickStatus(type,id,st,el);}}
 viewEl.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ") return; const t=e.target.closest?.("[data-open]"); if(t&&t===e.target){e.preventDefault();openDetail(t.dataset.open);}});
-const NEWBTN={skjol:"Skjal",verk:"Verkefni",undir:"Undirverk",fundir:"Fundur",timar:"Skrá tíma",vsk:"Viðskiptavinur",dagatal:"Fundur"};
+const NEWBTN={postur:"Póstur",skjol:"Skjal",verk:"Verkefni",undir:"Undirverk",fundir:"Fundur",timar:"Skrá tíma",vsk:"Viðskiptavinur",dagatal:"Fundur"};
 function pageHead(){const nb=NEWBTN[tab]; if(!nb||!MCP) return ""; const t=TABDEF.find(x=>x[0]===tab)?.[1]||"";
   return `<div class="phead"><h2 class="ptitle">${esc(t)}</h2><button type="button" class="btn primary pnew" data-act="fabnew" aria-label="Nýtt: ${esc(nb)}" title="Nýtt: ${esc(nb)}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>`;}
 function render(){
@@ -1438,7 +1438,7 @@ function deleteItem(type,id){
 }
 const TAB_KIND={undir:"undir",fundir:"fund",timar:"tima",verk:"verk",vsk:"vsk",dagatal:"fund"};
 function openSheet(){sheetwrap.hidden=false;drawForm();}
-function openFab(){if(!DETAIL&&tab==="skjol"&&window.skOpenNew){skOpenNew(null); return;}if(!DETAIL&&tab==="dagatal") PREFILL={date:calSel}; if(!DETAIL&&TAB_KIND[tab]) kind=TAB_KIND[tab]; else if(DETAIL?.startsWith("vsk:")) kind="verk"; _ctxRole=vskFilter||null; openSheet();}
+function openFab(){if(!DETAIL&&tab==="skjol"&&window.skOpenNew){skOpenNew(null); return;} if(!DETAIL&&tab==="postur"&&window.poCompose){poCompose({}); return;}if(!DETAIL&&tab==="dagatal") PREFILL={date:calSel}; if(!DETAIL&&TAB_KIND[tab]) kind=TAB_KIND[tab]; else if(DETAIL?.startsWith("vsk:")) kind="verk"; _ctxRole=vskFilter||null; openSheet();}
 function closeSheet(){sheetwrap.hidden=true; sheet.closest(".sheet").classList.remove("wide"); PREFILL=null; render();}
 document.getElementById("fab").addEventListener("click",openFab);
 document.getElementById("scrim").addEventListener("click",closeSheet);
