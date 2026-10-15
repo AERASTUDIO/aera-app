@@ -141,19 +141,37 @@
     return B;
   }
 
+  // Mappa verkefnis (stofnuð ef hún er ekki til) og undirmappa sem byrjar á `prefix`, t.d. "08".
+  async function projSub(p, prefix, fallbackName) {
+    if (!p) { await mkFolder(ROOT, OFLOKKAD); return ROOT + "/" + OFLOKKAD; }
+    await verkMoppur(true).catch(() => null);
+    let k = keyOf(p);
+    if (!k) { await mkProj(p.nafn); await verkMoppur(true); k = keyOf(p); }
+    if (!k) return ROOT + "/" + OFLOKKAD;
+    const kids = await all(`/me/drive/items/${VK[k].id}/children?$select=name,folder&$top=999`);
+    const fm = kids.find(i => i.folder && new RegExp("^" + prefix + "\\b").test(i.name));
+    if (!fm) await mkFolder(ROOT + "/" + k, fallbackName);
+    return ROOT + "/" + k + "/" + (fm ? fm.name : fallbackName);
+  }
+  async function upload(path, data, type) {
+    return MS.g(`/me/drive/root:/${encP(path)}:/content?@microsoft.graph.conflictBehavior=rename`, { method: "PUT", body: data, headers: { "Content-Type": type || "application/octet-stream" } });
+  }
+  // Kvittun fyrir útlagðan kostnað → <verkefni>/02 Vinnuskjöl/Kvittanir (eða Óflokkað/Kvittanir)
+  window.msKvittun = async function (file, p, date, desc) {
+    const base = await projSub(p, "02", "02 Vinnuskjöl");
+    await mkFolder(base, "Kvittanir");
+    const ext = (file.name.match(/\.[a-z0-9]{1,5}$/i) || [""])[0].toLowerCase();
+    const it = await upload(base + "/Kvittanir/" + safe(`${date} ${desc}`).slice(0, 120) + ext, file, file.type);
+    Object.keys(TREE).forEach(k => delete TREE[k]);
+    return { url: it.webUrl, id: it.id };
+  };
+
   async function fundargerd(fid, quiet) {
     const f = (S?.fundir || []).find(x => x.id === fid); if (!f) return;
     const p = typeof fundProj === "function" ? fundProj(f) : findProj(f.projectId);
-    let dir = ROOT + "/" + OFLOKKAD;
-    if (p) {
-      await verkMoppur(true).catch(() => null);
-      let k = keyOf(p);
-      if (!k) { await mkProj(p.nafn); await verkMoppur(true); k = keyOf(p); }
-      if (k) { const kids = await all(`/me/drive/items/${VK[k].id}/children?$select=name,folder&$top=999`); const fm = kids.find(i => i.folder && /^08\b/.test(i.name)); dir = ROOT + "/" + k + "/" + (fm ? fm.name : FUNDAMAPPA); if (!fm) await mkFolder(ROOT + "/" + k, FUNDAMAPPA); }
-    } else await mkFolder(ROOT, OFLOKKAD);
+    const dir = await projSub(p, "08", FUNDAMAPPA);
     const fname = safe(`${String(f.date || "").slice(0, 10)} Fundargerð - ${f.name}`) + ".docx";
-    const it = await MS.g(`/me/drive/root:/${encP(dir + "/" + fname)}:/content?@microsoft.graph.conflictBehavior=rename`,
-      { method: "PUT", body: makeDocx(fundBlocks(f, p)), headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" } });
+    const it = await upload(dir + "/" + fname, makeDocx(fundBlocks(f, p)), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     await saveSnapshot(s => { const q = (s.fundir || []).find(x => x.id === fid); if (q) { q.fundargerd = it.webUrl; q.fgId = it.id; } });
     Object.keys(TREE).forEach(k => delete TREE[k]);
     if (!quiet) toast("Fundargerð stofnuð í OneDrive");
