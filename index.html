@@ -429,6 +429,20 @@ body.haspnew .fab{display:none!important}
 .dbadge{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--dc);color:#fff;font-weight:600;font-size:13px;flex:none}
 .skseg{flex-wrap:wrap}.skseg button{font-size:13px}
 .side .tc{display:none}
+.sheetmin{position:sticky;top:0;float:right;margin:-4px -6px 0 8px;z-index:3;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:inline-grid;place-items:center;cursor:pointer}
+.sheetmin:hover{color:var(--ink)}
+#dock{position:fixed;left:12px;right:12px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:9;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+@media (min-width:1024px){#dock{left:auto;right:24px;bottom:20px;justify-content:flex-end;max-width:60vw}}
+.dchip{pointer-events:auto;display:flex;align-items:center;background:var(--accent);color:var(--on-accent);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:280px}
+.dchip .dopen{border:0;background:transparent;color:inherit;font:inherit;font-size:13.5px;font-weight:500;padding:10px 6px 10px 14px;cursor:pointer;display:flex;gap:6px;align-items:center;min-width:0}
+.dchip .dopen span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dchip .dx{border:0;background:transparent;color:inherit;opacity:.75;padding:10px 12px;cursor:pointer}
+body.hasdock .fab{bottom:calc(132px + env(safe-area-inset-bottom,0px))}
+.backrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.newwin{border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:8px 0}
+.newwin:hover{color:var(--ink)}
+@media (display-mode: standalone) and (max-width:1023px){.newwin{display:none}}
+
 .sigprev{background:#fff;border-radius:12px;padding:16px;margin:4px 0 10px;overflow-x:auto}
 .kt{font-variant-numeric:tabular-nums}
 .rfield{position:relative;display:flex;flex-direction:column;gap:6px}.rfield .lbl{font-size:13px;color:var(--muted)}
@@ -498,7 +512,8 @@ body.haspnew .fab{display:none!important}
 <button class="fab" id="fab" aria-label="Bæta við"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button>
 <nav class="mbar" aria-label="Valmynd"><button type="button" class="mbtn" id="mbtn" aria-haspopup="menu" aria-expanded="false" aria-controls="menuwrap"><span id="mico"></span><span class="mlab" id="mlab">Yfirlit</span><span class="badge" id="mbadge" hidden></span><span class="mhint">Valmynd</span><svg class="up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 15l6-6 6 6"/></svg></button></nav>
 <div id="menuwrap" hidden><div class="scrim" id="mscrim"></div><div class="mpanel"><div class="in" role="menu" id="mitems"></div></div></div>
-<div id="sheetwrap" hidden><div class="scrim" id="scrim"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-h"><div class="grab"></div><div id="sheet"></div></div></div>
+<div id="sheetwrap" hidden><div class="scrim" id="scrim"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-h"><div class="grab"></div><button type="button" class="sheetmin" id="sheetmin" aria-label="Lágmarka – halda áfram síðar" title="Lágmarka (halda áfram síðar)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 17h12"/></svg></button><div id="sheet"></div></div></div>
+<div id="dock" aria-label="Opin verk" hidden></div>
 <div id="login" hidden><div class="login-in"><span class="logo" role="img" aria-label="AERA Studio"></span>
 <p>Skráðu þig inn til að opna verkefnin.</p><button type="button" class="btn primary" id="login-btn">Skrá inn með Google</button><div id="login-msg" role="alert"></div></div></div>
 <div class="toast" id="toast" hidden></div>
@@ -556,7 +571,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.35"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.36"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
@@ -1018,7 +1033,7 @@ function downloadXlsx(R){
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); toast("Tímaskýrsla sótt");
 }
 /* ---------- Yfirlitssíður ---------- */
-const backBar=()=>`<button class="back" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Til baka</button>`;
+const backBar=()=>`<div class="backrow"><button class="back" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>Til baka</button><button type="button" class="newwin" onclick="openNewWin()" title="Opna í nýjum glugga – vinna í appinu á meðan"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="7.5" width="13" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v10"/></svg>Nýr gluggi</button></div>`;
 const projLink=p=>p?`<a class="plink" ${tapAttr("verk",p.id)}><span class="nr">${esc(p.nr)}</span> ${esc(p.stutt)}</a>`:"";
 const timeList=(match,title="Tímaskráning")=>{const es=faerslur().filter(match).sort((a,b)=>String(b.date+(b.fra||"")).localeCompare(String(a.date+(a.fra||""))));
   const tot=es.reduce((s,e)=>s+(+e.timar||0),0);
@@ -1463,8 +1478,27 @@ function openSheet(){sheetwrap.hidden=false;drawForm();}
 function openFab(){if(!DETAIL&&tab==="skjol"&&window.skOpenNew){skOpenNew(null); return;} if(!DETAIL&&tab==="postur"&&window.poCompose){poCompose({}); return;}if(!DETAIL&&tab==="dagatal") PREFILL={date:calSel}; if(!DETAIL&&TAB_KIND[tab]) kind=TAB_KIND[tab]; else if(DETAIL?.startsWith("vsk:")) kind="verk"; _ctxRole=vskFilter||null; openSheet();}
 function closeSheet(){sheetwrap.hidden=true; sheet.closest(".sheet").classList.remove("wide"); PREFILL=null; render();}
 document.getElementById("fab").addEventListener("click",openFab);
-document.getElementById("scrim").addEventListener("click",closeSheet);
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!sheetwrap.hidden) closeSheet();});
+/* ---------- Lágmarka glugga: halda áfram að vinna í appinu og koma aftur að verkinu ---------- */
+let DOCK=[];
+const sheetHasWork=()=>!!sheet.querySelector("form textarea, form input:not([type=hidden]):not([type=checkbox]):not([type=date]), .rbox");
+function sheetTitle(){const h=sheet.querySelector("#sheet-h")?.textContent?.trim()||"Opið verk"; const sub=sheet.querySelector("#po-subj")?.value||sheet.querySelector("#sk-name,#f-name,#f-desc")?.value||""; return sub?h+" · "+sub:h;}
+function minimizeSheet(){if(sheetwrap.hidden||!sheet.firstChild) return; const title=sheetTitle(); const frag=document.createDocumentFragment(); while(sheet.firstChild) frag.appendChild(sheet.firstChild);
+  const wide=sheet.closest(".sheet").classList.contains("wide"); DOCK.push({id:newId(),title,frag,wide,icon:frag.querySelector?.("#pocf")?"✉":frag.querySelector?.("#rkf")?"🧾":frag.querySelector?.("#skf")?"📄":"✎"});
+  sheetwrap.hidden=true; sheet.closest(".sheet").classList.remove("wide"); drawDock(); render(); toast("Lágmarkað – opnaðu aftur neðst á skjánum");}
+function restoreDock(id){const i=DOCK.findIndex(x=>x.id===id); if(i<0) return; if(!sheetwrap.hidden) minimizeSheet(); const it=DOCK.splice(i,1)[0];
+  sheet.innerHTML=""; sheet.appendChild(it.frag); sheet.closest(".sheet").classList.toggle("wide",!!it.wide); sheetwrap.hidden=false; drawDock();}
+function drawDock(){const el=document.getElementById("dock"); el.hidden=!DOCK.length; document.body.classList.toggle("hasdock",!!DOCK.length);
+  el.innerHTML=DOCK.map(x=>`<div class="dchip"><button type="button" class="dopen" data-dock="${x.id}" title="Opna aftur">${x.icon} <span>${esc(x.title)}</span></button><button type="button" class="dx" data-dockx="${x.id}" aria-label="Loka ${esc(x.title)}">✕</button></div>`).join("");
+  el.querySelectorAll("[data-dock]").forEach(b=>b.onclick=()=>restoreDock(b.dataset.dock));
+  el.querySelectorAll("[data-dockx]").forEach(b=>b.onclick=()=>{if(confirm("Loka þessu án þess að vista?")){DOCK=DOCK.filter(x=>x.id!==b.dataset.dockx); drawDock();}});}
+window.addEventListener("beforeunload",e=>{if(DOCK.length||(!sheetwrap.hidden&&sheetHasWork())){e.preventDefault(); e.returnValue="";}});
+document.getElementById("sheetmin").addEventListener("click",minimizeSheet);
+document.getElementById("scrim").addEventListener("click",()=>sheetHasWork()?minimizeSheet():closeSheet());
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!sheetwrap.hidden) (sheetHasWork()?minimizeSheet:closeSheet)();});
+/* Opna síðu í nýjum glugga (t.d. póst við hliðina á verkefni) */
+let _hashDone=false;
+function openFromHash(){if(_hashDone) return; _hashDone=true; const m=location.hash.match(/^#open=(.+)$/); if(!m) return; const k=decodeURIComponent(m[1]); try{history.replaceState(null,"",location.pathname);}catch(e){} const t=k.split(":")[0]; if(t&&TABDEF.some(x=>x[0]===({post:"postur",verk:"verk",sub:"undir",fund:"fundir",time:"timar",kostn:"timar",reikn:"timar",skjal:"skjol",vsk:"vsk"}[t]))) tab={post:"postur",verk:"verk",sub:"undir",fund:"fundir",time:"timar",kostn:"timar",reikn:"timar",skjal:"skjol",vsk:"vsk"}[t]; openDetail(k);}
+function openNewWin(){if(!DETAIL) return; window.open(location.pathname+"#open="+encodeURIComponent(DETAIL),"_blank","noopener");}
 function ctxProj(){if(!DETAIL) return null; const i=DETAIL.indexOf(":"),t=DETAIL.slice(0,i),id=DETAIL.slice(i+1);
   if(t==="verk") return {p:findProj(id)}; if(t==="sub"){const r=findSub(id); return r&&{p:r.p,u:r.u};} if(t==="fund"){const f=findFund(id); return {p:fundProj(f)};}
   if(t==="skjal") return {p:skjalProj(findSkjal(id))}; return null;}
@@ -1937,7 +1971,7 @@ function skrarHTML(p){
 window.aeraStart=function(db){
   DB=db; MCP={local:true}; document.getElementById("syncbtn").hidden=false; document.getElementById("logoutbtn").hidden=false; document.getElementById("fab").hidden=false;
   db.watch("app/skrar",s=>{SK=s.exists?s.data():null; if(S) render();},()=>{});
-  db.watch("app/state",s=>{PENDING=!!s.pending; if(s.exists){const nd=s.data(); if(JSON.stringify(nd)!==JSON.stringify(S)){S=nd; render();} else drawSync(); if(!s.fromCache&&window.msTick) msTick();} else if(!s.fromCache) importView();},
+  db.watch("app/state",s=>{PENDING=!!s.pending; if(s.exists){const nd=s.data(); if(JSON.stringify(nd)!==JSON.stringify(S)){S=nd; render(); openFromHash();} else drawSync(); if(!s.fromCache&&window.msTick) msTick();} else if(!s.fromCache) importView();},
     e=>{document.getElementById("view").innerHTML=`<h2 class="big">Gögn ekki aðgengileg</h2><div class="empty">${esc(e?.code==="permission-denied"?"Þessi aðgangur hefur ekki leyfi til að lesa gögnin.":(e?.message||"Óþekkt villa"))}</div>`;});
 };
 document.getElementById("fab").hidden=true;
