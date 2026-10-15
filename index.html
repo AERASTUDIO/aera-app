@@ -574,7 +574,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.38"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.39"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
@@ -687,6 +687,8 @@ const upCard=i=>`<div class="card tap" role="button" tabindex="0" data-open="${e
 function vYfirlit(){
   const up=upcoming(), late=up.filter(i=>daysTo(i.when)<0);
   const openSubs=verkefni().flatMap(p=>(p.undirverk||[]).filter(u=>u.stada!=="Done"));
+  const hr=new Date().getHours(), first=(STARFS().find(x=>x.sk===ME())?.nafn||"").split(" ")[0];
+  const greet=hr<5?"Góða nótt":hr<11?"Góðan daginn":hr<18?"Góðan dag":"Gott kvöld";
   const goal=+CFG().vikumark||40, wk=weekSum(0), pct=Math.min(1,wk/goal), R=44, C=2*Math.PI*R;
   const todayItems=(calItems().get(isoDay(today))||[]).filter(i=>!i.span).sort((a,b)=>String(hhmm(a.when)||"").localeCompare(String(hhmm(b.when)||"")));
   const k=klukka();
@@ -708,7 +710,7 @@ function vYfirlit(){
     ...(S?.postar||[]).map(m=>({w:m.dags,h:`<a class="lrow fl" href="${esc(m.url||"#")}" target="_blank" rel="noopener"><div class="ll">✉️</div><div class="lm"><div class="lt">${esc(m.efni)}</div><div class="ls">${esc([m.fra,fmtDate(m.dags),findProj(m.verkefniId)?.stutt].filter(Boolean).join(" · "))}</div></div></a>`}))]
     .sort((a,b)=>String(b.w).localeCompare(String(a.w))).slice(0,6);
   const unass=(S?.postar||[]).filter(m=>!m.verkefniId);
-  return `${klukkaBanner()}<h2 class="hello">Halló Telma</h2>
+  return `${klukkaBanner()}<h2 class="hello">${greet}${first?", "+esc(first):""}</h2>
   <p class="sub">${late.length?`<b style="color:var(--ink)">${late.length} ${late.length===1?"atriði komið":"atriði komin"} fram yfir</b> · `:""}${active().length} verkefni í gangi · ${openSubs.length} opin undirverk</p>
   <div class="hero">${ring}${agenda}${nextCard}</div>
   ${late.length?`<div class="viewtitle">⚠ Komið fram yfir · ${late.length}</div>${llist(late.map(i=>lrow(i.open,{lead:(()=>{const x=d(i.when); return x?`<b>${x.getDate()}</b><small>${MON[x.getMonth()]}</small>`:"–";})(),title:esc(i.title),sub:esc([i.kind,i.nr].filter(Boolean).join(" · ")),right:relPill(daysTo(i.when))})))}`:""}
