@@ -62,7 +62,19 @@
   async function loadMsg(id) {
     try {
       MSG[id] = await MS.g(`/me/messages/${encodeURIComponent(id)}?$select=id,subject,from,toRecipients,ccRecipients,receivedDateTime,body,webLink,hasAttachments,bodyPreview`);
-      if (MSG[id].hasAttachments) ATT[id] = (await MS.g(`/me/messages/${encodeURIComponent(id)}/attachments?$select=id,name,size,contentType,isInline`)).value.filter(a => !a.isInline);
+      const m = MSG[id], html = m.body?.contentType === "html" ? m.body.content || "" : "", hasCid = /src\s*=\s*["']?cid:/i.test(html);
+      if (m.hasAttachments || hasCid) {
+        const all = (await MS.g(`/me/messages/${encodeURIComponent(id)}/attachments?$select=id,name,size,contentType,isInline,contentId`)).value || [];
+        ATT[id] = all.filter(a => !a.isInline && !(hasCid && a.contentId && html.includes("cid:" + a.contentId.replace(/^<|>$/g, ""))));
+        // Innfelldar myndir (cid:) → sóttar og settar beint inn í póstinn
+        if (hasCid) {
+          const inl = all.filter(a => a.contentId && /^image\//i.test(a.contentType || "") && a.size < 8 * 1024 * 1024);
+          let body = html;
+          for (const a of inl) { try { const f = await MS.g(`/me/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(a.id)}`);
+            if (f.contentBytes) { const cid = a.contentId.replace(/^<|>$/g, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); body = body.replace(new RegExp("cid:" + cid, "gi"), `data:${a.contentType};base64,${f.contentBytes}`); } } catch (e) {} }
+          m.body = { ...m.body, content: body };
+        }
+      }
     } catch (e) { MSG[id] = { _err: e.message }; }
     render();
   }
