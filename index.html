@@ -401,6 +401,24 @@ details.grp>summary{list-style:none;cursor:pointer}details.grp>summary::-webkit-
 :root[data-variant="stal"]{--bg:#e3e9ef;--surface:#f3f6f9;--ink:#1f2a35;--muted:#5f6f7f;--line:#ccd6e0;--raise:#e9eef3;--raise2:#ffffff;--hover:#e8edf2;--sheet:#f3f6f9;--field:#ffffff;--border2:#c6d1dc;--bar0:#c6d1dc;--gray-soft:#dfe5eb}
 .swatch{display:inline-flex;align-items:center;gap:8px}.swatch i{width:18px;height:18px;border-radius:6px;border:1px solid var(--border2);background:linear-gradient(135deg,var(--a) 50%,var(--b) 50%)}
 /* ---------- Lifandi yfirlit ---------- */
+.rkpick{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;max-height:240px;overflow:auto}
+.rkrow{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)!important;margin:0!important}.rkrow:last-child{border-bottom:0}
+.rkrow input{width:auto;flex:none}.rkrow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rkrow b{flex:none;font-weight:500;font-variant-numeric:tabular-nums}
+.rksum,.rkopen{margin-top:12px}.rksum .sub-i b,.rkopen .sub-i b{font-variant-numeric:tabular-nums}
+.invwrap{margin-top:16px;overflow-x:auto;border-radius:14px}
+.inv{box-sizing:border-box;background:#fff;color:#14181c;padding:28px;border-radius:14px;font-size:13px;line-height:1.45;min-width:520px}
+.inv b{color:#0b1e33}.inv-h{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}
+.inv-s{font-size:20px;font-weight:600;color:#1f4e79}.inv-t{font-size:22px;font-weight:600;color:#1f4e79;letter-spacing:-.01em}
+.inv-m{color:#55606b;font-size:12.5px;margin-top:4px}.inv-k{font-size:11.5px;color:#5b7fa6;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.inv-b{margin-top:22px;padding:12px 14px;background:#f2f6fa;border-radius:8px}
+.inv-tab{width:100%;border-collapse:collapse;margin-top:16px;font-variant-numeric:tabular-nums}.inv-tab th{background:#1f4e79;color:#fff;font-weight:500;text-align:left;padding:7px 8px;font-size:12px}
+.inv-tab td{padding:7px 8px;border-bottom:1px solid #e3e8ee;vertical-align:top}.inv-tab .r{text-align:right;white-space:nowrap}.inv-tab tr.g td{font-weight:600;border-top:1.5px solid #1f4e79}
+.inv-tot{margin:14px 0 0 auto;max-width:300px}.inv-tot div{display:flex;justify-content:space-between;padding:4px 0;font-variant-numeric:tabular-nums}.inv-tot .g{border-top:2px solid #1f4e79;margin-top:4px;padding-top:8px;font-size:15px;font-weight:600}
+.inv-pay{margin-top:18px;color:#3a444e;font-size:12.5px}.inv-sund{margin-top:26px}
+@media (max-width:560px){.invwrap .inv{zoom:.68}}@media (max-width:380px){.invwrap .inv{zoom:.62}}
+#printarea{display:none}
+@media print{@page{size:A4;margin:14mm}body.printinv>*:not(#printarea){display:none!important}body.printinv #printarea{display:block!important}body.printinv{background:#fff!important}
+  #printarea .inv{min-width:0;padding:0;border-radius:0;font-size:11pt}#printarea .inv-sund{break-before:page}#printarea .inv-tab th{-webkit-print-color-adjust:exact;print-color-adjust:exact}#printarea .inv-b{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 .seg2{margin:0 0 4px}.seg2 button{font-size:13.5px}
 .phead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0 2px}.ptitle{margin:0;font-size:24px;font-weight:500;letter-spacing:-0.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pnew{width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .hello{margin:22px 0 2px;font-size:28px;font-weight:500;letter-spacing:-0.03em}
@@ -514,7 +532,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.19"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.20"; document.getElementById("appver").textContent="v"+APP_VERSION;
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
 const today=new Date(); today.setHours(0,0,0,0);
@@ -894,7 +912,8 @@ function vTimar(){
     <div class="viewtitle">Eftir verkefnum á tímabilinu</div><div class="card list">${per.length?per.map(({p,t})=>`<div class="tap" ${tapAttr("verk",p.id)}><div class="sub-i"><span><span class="nr">${esc(p.nr)}</span> ${esc(p.stutt)}</span><b style="font-variant-numeric:tabular-nums">${hrs(t)}</b></div><div class="bar"><i style="width:${t/max*100}%"></i></div></div>`).join(""):`<span style="color:var(--muted)">Engir tímar á tímabilinu.</span>`}</div>
     ${(()=>{const ks=kostn().filter(k=>(!timStarf||(k.starfsmadur||ME())===timStarf)&&(!timFilter||k.verkefniId===timFilter)); const cur_=ks.filter(k=>timabilOf(k.date)===cur), old=ks.length-cur_.length;
       return kostnSection(cur_,"Útlagður kostnaður á tímabilinu")+(old?`<p class="hint" style="margin-top:6px">${old} eldri ${old===1?"færsla":"færslur"} (${esc(kr(sumK(ks)-sumK(cur_)))}) sjást á síðu hvers verkefnis og í tímaskýrslu.</p>`:"");})()}
-    <div class="viewtitle">Tímaskýrsla fyrir reikning</div>
+    ${window.rkTimarSection?rkTimarSection():""}
+    <div class="viewtitle">Tímaskýrsla</div>
     <label>Tímabil<select id="repper">${periods.map(k=>`<option>${esc(k)}</option>`).join("")}<option value="__dagar">Velja dagsetningar…</option></select></label>
     <div class="two" id="repdagar" hidden style="margin-top:10px"><label>Frá<input id="repfra" type="date" value="${isoDay(new Date(today.getFullYear(),today.getMonth(),1))}"></label><label>Til<input id="reptil" type="date" value="${isoDay(today)}"></label></div>
     <label style="margin-top:10px">Verkefni<select id="repproj"><option value="">Öll verkefni</option>${verkefni().slice().sort((a,b)=>b.nr.localeCompare(a.nr)).map(p=>`<option value="${esc(p.id)}">${esc(p.nafn)}</option>`).join("")}</select></label>
@@ -981,15 +1000,16 @@ const dtabs=(tabs)=>`<nav class="dtabs" role="tablist" aria-label="Síður">${ta
 const fixTab=tabs=>{if(!tabs.some(t=>t[0]===DTAB)) DTAB=tabs[0][0];};
 const subRowL=u=>lrow("sub:"+u.id,{title:`<span class="nr">${esc(u.nr)}</span>&nbsp; ${esc(subName(u))}`,sub:esc([STL[u.stada]||u.stada,u.timar?hrs(u.timar):""].filter(Boolean).join(" · ")),right:u.stada!=="Done"&&u.skiladagur?relPill(daysTo(u.skiladagur)):""});
 const meetRowL=f=>{const x=d(f.date); return lrow("fund:"+f.id,{lead:x?`<b>${x.getDate()}</b><small>${MON[x.getMonth()]}</small>`:"–",title:esc(f.name),sub:esc([hhmm(f.date)?"kl. "+hhmm(f.date):"",f.stadsetning,f.fundargerd?"📄 Fundargerð":""].filter(Boolean).join(" · ")),right:daysTo(f.date)>=0&&daysTo(f.date)<=14?relPill(daysTo(f.date)):""});};
-const kostnRowL=k=>{const x=d(k.date), p=findProj(k.verkefniId); return lrow("kostn:"+k.id,{lead:x?`<b>${x.getDate()}</b><small>${MON[x.getMonth()]}</small>`:"–",title:esc(k.lysing||"Kostnaður"),sub:esc([p?.nr,starfName(k.starfsmadur||ME()),k.kvittun?"🧾 Kvittun":""].filter(Boolean).join(" · ")),right:`<span class="lc">${esc(kr(k.upphaed))}</span>`});};
+const kostnRowL=k=>{const x=d(k.date), p=findProj(k.verkefniId); return lrow("kostn:"+k.id,{lead:x?`<b>${x.getDate()}</b><small>${MON[x.getMonth()]}</small>`:"–",title:esc(k.lysing||"Kostnaður"),sub:esc([p?.nr,k.kvittun?"🧾 Kvittun":"",window.rkTag?rkTag(k):""].filter(Boolean).join(" · ")),right:`<span class="lc">${esc(kr(k.upphaed))}</span>`});};
 function kostnSection(ks,title){return `<div class="viewtitle" style="display:flex;align-items:center;gap:8px">${title||"Útlagður kostnaður"}${ks.length?" · "+esc(kr(sumK(ks))):""}${MCP?`<a class="plink" data-act="add:kostn" style="margin-left:auto">+ Kostnaður</a>`:""}</div>${ks.length?llist(ks.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(kostnRowL)):`<div class="empty">Enginn útlagður kostnaður skráður.</div>`}`;}
-const timeRowL=e=>{const x=d(e.date); return lrow("time:"+e.id,{lead:x?`<b>${x.getDate()}</b><small>${MON[x.getMonth()]}</small>`:"–",title:esc(cleanLys(e.lysing)),sub:esc([e.fra?e.fra+(e.til?"–"+e.til:""):"",e.nr].filter(Boolean).join(" · ")),right:`<span class="lc">${esc(hrs(e.timar))}</span>`});};
+const timeRowL=e=>{const x=d(e.date); return lrow("time:"+e.id,{lead:x?`<b>${x.getDate()}</b><small>${MON[x.getMonth()]}</small>`:"–",title:esc(cleanLys(e.lysing)),sub:esc([e.fra?e.fra+(e.til?"–"+e.til:""):"",e.nr,window.rkTag?rkTag(e):""].filter(Boolean).join(" · ")),right:`<span class="lc">${esc(hrs(e.timar))}</span>`});};
 const sumT=es=>es.reduce((a,e)=>a+(+e.timar||0),0);
 function timesPage(es,startAct){
   const pid=DETAIL&&DETAIL.startsWith("verk:")?DETAIL.slice(5):null;
   const groups={}; es.forEach(e=>{const k=e.timabil||timabilOf(e.date); (groups[k]=groups[k]||[]).push(e);});
   return `<div class="kpis"><div class="card"><b>${num(sumT(es))}</b><span>klst. alls</span></div><div class="card"><b>${num(sumT(es.filter(e=>(e.timabil||timabilOf(e.date))===curPeriod())))}</b><span>klst. á tímabili</span></div></div>
   ${MCP?`<div class="links">${klukka()?"":`<button type="button" class="btn primary" data-act="${startAct}">▶ Byrja klukku</button>`}<button type="button" class="btn" data-act="add:tima">+ Tími</button><button type="button" class="btn" data-act="add:kostn">+ Kostnaður</button>${pid&&(es.length||kostn().some(k=>k.verkefniId===pid))?`<button type="button" class="btn" data-act="prep:${esc(pid)}">Tímaskýrsla</button>`:""}</div>`:""}
+  ${pid&&window.rkProjSection?rkProjSection(pid):""}
   ${es.length?Object.entries(groups).map(([k,g])=>`<div class="viewtitle">${esc(k)} · ${hrs(sumT(g))}</div>${llist(g.map(timeRowL))}`).join(""):`<div class="empty" style="margin-top:16px">Engar tímaskráningar ennþá.</div>`}
   ${(()=>{const ks=kostn().filter(k=>DETAIL?.startsWith("verk:")?k.verkefniId===DETAIL.slice(5):DETAIL?.startsWith("sub:")?k.undirverkId===DETAIL.slice(4):false); return kostnSection(ks);})()}`;
 }
@@ -1120,6 +1140,7 @@ function detailHTML(){
   if(t==="fund"){const f=findFund(id); return f&&dFund(f);}
   if(t==="time"){const e=findTime(id); return e&&dTime(e);}
   if(t==="kostn"){const k=findKostn(id); return k&&dKostn(k);}
+  if(t==="reikn"){const R=window.rkFind&&rkFind(id); return R&&rkDetail(R);}
   return null;
 }
 function openDetail(key){
@@ -1148,6 +1169,7 @@ viewEl.addEventListener("change",e=>{if(e.target.id==="timfilter"){timFilter=e.t
   if(e.target.id==="undirfilter"){undirFilter=e.target.value;render();} if(e.target.id==="skjalfilter"){skjalFilter=e.target.value;render();}});
 function doAct(act,el){const [k,...r]=act.split(":");
   if(k.startsWith("ms")&&window.msAct){msAct(k,r,el); return;}
+  if(k.startsWith("rk")&&window.rkAct){rkAct(k,r,el); return;}
   if(k==="later"){showLater=true; render(); return;}
   if(k==="fabnew"){openFab(); return;}
   if(k==="vskf"){vskFilter=r.join(":"); render(); return;}
@@ -1244,6 +1266,7 @@ function vStillingar(){
   <p class="hint">Sjálfvirkt: ljóst á tölvu, dökkt í síma. Líka hægt að skipta með hnappinum efst til hægri.</p>
   ${["light","dark"].map(k=>`<div class="kind" style="margin:12px 0 6px">${k==="light"?"Ljóst þema":"Dökkt þema"}</div><div class="stat-row">${VARIANTS[k].map(([v,l,a,b])=>`<button type="button" class="chipbtn swatch" data-act="variant:${k}:${v}" aria-pressed="${(k==="light"?LVAR:DVAR)===v}"><i style="--a:${a};--b:${b}"></i>${l}</button>`).join("")}</div>`).join("")}
   ${window.msStillingarHTML?msStillingarHTML():""}
+  ${window.rkStillingarHTML?rkStillingarHTML():""}
   <div class="viewtitle">Vinnuvika</div>
   <div class="two" style="align-items:end"><label>Markmið klst. á viku<input id="cfg-vikumark" type="text" inputmode="decimal" value="${esc(num(CFG().vikumark||40))}"></label><button type="button" class="btn" data-act="cfg:vikumark:0" style="min-height:46px">Vista</button></div>
   <div class="viewtitle">Áminningar</div>
@@ -1875,5 +1898,6 @@ window.aeraStart=function(db){
 document.getElementById("fab").hidden=true;
 </script>
 <script src="ms-app.js"></script>
+<script src="reikn.js"></script>
 
 </body></html>
