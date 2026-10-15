@@ -64,16 +64,18 @@
       MSG[id] = await MS.g(`/me/messages/${encodeURIComponent(id)}?$select=id,subject,from,toRecipients,ccRecipients,receivedDateTime,body,webLink,hasAttachments,bodyPreview`);
       const m = MSG[id], html = m.body?.contentType === "html" ? m.body.content || "" : "", hasCid = /src\s*=\s*["']?cid:/i.test(html);
       if (m.hasAttachments || hasCid) {
-        const all = (await MS.g(`/me/messages/${encodeURIComponent(id)}/attachments?$select=id,name,size,contentType,isInline,contentId`)).value || [];
-        ATT[id] = all.filter(a => !a.isInline && !(hasCid && a.contentId && html.includes("cid:" + a.contentId.replace(/^<|>$/g, ""))));
-        // Innfelldar myndir (cid:) → sóttar og settar beint inn í póstinn
+        // contentId er aðeins til á fileAttachment, svo það er ekki valið í listanum (annars villa frá Graph)
+        const all = (await MS.g(`/me/messages/${encodeURIComponent(id)}/attachments?$select=id,name,size,contentType,isInline`)).value || [];
+        const used = new Set();
         if (hasCid) {
-          const inl = all.filter(a => a.contentId && /^image\//i.test(a.contentType || "") && a.size < 8 * 1024 * 1024);
           let body = html;
-          for (const a of inl) { try { const f = await MS.g(`/me/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(a.id)}`);
-            if (f.contentBytes) { const cid = a.contentId.replace(/^<|>$/g, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); body = body.replace(new RegExp("cid:" + cid, "gi"), `data:${a.contentType};base64,${f.contentBytes}`); } } catch (e) {} }
+          for (const a of all.filter(a => /^image\//i.test(a.contentType || "") && a.size < 8 * 1024 * 1024 && (a.isInline || all.length < 15))) {
+            try { const f = await MS.g(`/me/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(a.id)}`);
+              const cid = String(f.contentId || "").replace(/^<|>$/g, "");
+              if (f.contentBytes && cid && body.includes("cid:" + cid)) { body = body.split("cid:" + cid).join(`data:${a.contentType};base64,${f.contentBytes}`); used.add(a.id); } } catch (e) {} }
           m.body = { ...m.body, content: body };
         }
+        ATT[id] = all.filter(a => !used.has(a.id) && !a.isInline);
       }
     } catch (e) { MSG[id] = { _err: e.message }; }
     render();
