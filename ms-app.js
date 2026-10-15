@@ -223,11 +223,18 @@
     if (!xs.length) throw new Error("Fann ekki póstmöppuna „AERA“ í Outlook.");
     return MF = xs[0].id;
   }
-  function guessProj(text) {
+  // Giskar á verkefni pósts: verknúmer eða heiti í efni/texta, annars netfang sendanda sem passar við viðskiptavin með eitt verkefni í gangi
+  function guessProj(text, fromAddr) {
     const t = String(text || "").toLowerCase();
     const ps = verkefni();
-    return (ps.find(p => p.nr && t.includes(p.nr.toLowerCase())) || ps.find(p => p.stutt && p.stutt.length >= 4 && t.includes(p.stutt.toLowerCase())))?.id || null;
+    const hit = (ps.find(p => p.nr && t.includes(p.nr.toLowerCase())) || ps.find(p => p.stutt && p.stutt.length >= 4 && t.includes(p.stutt.toLowerCase())))?.id;
+    if (hit || !fromAddr) return hit || null;
+    const dom = String(fromAddr).toLowerCase().split("@")[1]; if (!dom || /gmail|hotmail|outlook|live|icloud|yahoo|simnet|internet\.is/.test(dom)) return null;
+    const cs = vskList().filter(c => [c.netfang, c.netfangT].some(e => String(e || "").toLowerCase().endsWith("@" + dom)));
+    const cand = ps.filter(p => !isDone(p) && cs.some(c => sameId(p.vskId, c.id) || sameId(p.vkId, c.id)));
+    return cand.length === 1 ? cand[0].id : null;
   }
+  window.msGuessProj = guessProj;
   async function postar(manual) {
     const fid = await mailFolder();
     const ms = await MS.g(`/me/mailFolders/${fid}/messages?$top=50&$orderby=receivedDateTime%20desc&$select=id,subject,from,receivedDateTime,bodyPreview,webLink`);
@@ -235,7 +242,7 @@
     const have = S?.postar || [];
     const known = m => have.some(x => x.gid === m.id || (x.url && x.url === m.webLink) || (x.efni === (m.subject || "") && String(x.dags || "").slice(0, 10) === String(m.receivedDateTime || "").slice(0, 10)));
     const nyir = (ms.value || []).filter(m => !known(m)).map(m => ({ id: newId(), gid: m.id, efni: m.subject || "(ekkert efni)", fra: m.from?.emailAddress?.name || m.from?.emailAddress?.address || "",
-      dags: m.receivedDateTime, url: m.webLink, brot: (m.bodyPreview || "").slice(0, 240), verkefniId: guessProj((m.subject || "") + " " + (m.bodyPreview || "")) }));
+      dags: m.receivedDateTime, url: m.webLink, brot: (m.bodyPreview || "").slice(0, 240), verkefniId: guessProj((m.subject || "") + " " + (m.bodyPreview || ""), m.from?.emailAddress?.address) }));
     if (nyir.length) await saveSnapshot(s => { s.postar = (s.postar || []).concat(nyir); });
     if (manual) toast(nyir.length ? `${nyir.length} ${nyir.length === 1 ? "nýr póstur" : "nýir póstar"}` : "Engir nýir póstar");
     return nyir.length;
