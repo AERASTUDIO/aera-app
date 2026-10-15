@@ -1,6 +1,6 @@
 // Þjónustuskrifta (service worker): geymir appið á tækinu svo það opnist hratt og virki án nets.
 // Hækkaðu VERSION þegar eitthvað breytist, þá sækja tækin nýju útgáfuna.
-const VERSION = "aera-v16";
+const VERSION = "aera-v17";
 const SHELL = ["./", "index.html", "firebase.js", "firebase-config.js", "xlsx.js", "ms.js", "ms-app.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
