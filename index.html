@@ -429,6 +429,7 @@ body.haspnew .fab{display:none!important}
 .dbadge{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--dc);color:#fff;font-weight:600;font-size:13px;flex:none}
 .skseg{flex-wrap:wrap}.skseg button{font-size:13px}
 .side .tc{display:none}
+.reloading{animation:relo .9s ease-in-out infinite}@keyframes relo{50%{opacity:.35}}
 .seg2{margin:0 0 4px}.seg2 button{font-size:13.5px}
 .phead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;margin-bottom:2px}.ptitle{margin:0;font-size:24px;font-weight:500;letter-spacing:-0.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pnew{width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .hello{margin:22px 0 2px;font-size:28px;font-weight:500;letter-spacing:-0.03em}
@@ -543,7 +544,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.23"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.24"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
@@ -1244,7 +1245,11 @@ viewEl.addEventListener("touchend",e=>{if(swX===null) return; const dx=e.changed
   if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*0.6) return; const ks=[...document.querySelectorAll(".dtabs [data-act]")].map(b=>b.dataset.act.slice(5)); const i=ks.indexOf(DTAB);
   const n=dx<0?i+1:i-1; if(n>=0&&n<ks.length) setDtab(ks[n],dx<0?1:-1);},{passive:true});
 /* Smellt á merkið → Yfirlit */
-function goHome(){DETAIL=null; DTAB="yfirlit"; tab="yfirlit"; try{history.replaceState(null,"");}catch(e){} try{localStorage.setItem("aera-tab",tab)}catch(e){} closeMenu?.(); render(); window.scrollTo({top:0});}
+function goHome(){DETAIL=null; DTAB="yfirlit"; tab="yfirlit"; try{history.replaceState(null,"");}catch(e){} try{localStorage.setItem("aera-tab",tab)}catch(e){} closeMenu?.(); render(); window.scrollTo({top:0});
+  // Endurhlaða appið: athuga fyrst hvort ný útgáfa sé komin, svo sækja allt upp á nýtt
+  document.querySelectorAll("header .brand h1, .side .logo").forEach(el=>el.classList.add("reloading"));
+  const go=()=>location.reload(); const t=setTimeout(go,1500);
+  if("serviceWorker" in navigator) navigator.serviceWorker.getRegistration().then(r=>r?.update()).catch(()=>{}).finally(()=>{clearTimeout(t); setTimeout(go,150);}); else {clearTimeout(t); go();}}
 document.querySelectorAll("header .brand h1, .side .logo").forEach(el=>{el.setAttribute("role","link"); el.setAttribute("tabindex","0"); el.setAttribute("title","Yfirlit"); el.style.cursor="pointer";
   el.addEventListener("click",goHome); el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault(); goHome();}});});
 /* ---------- Dagatalsskrá (.ics) og tilkynningar ---------- */
