@@ -497,6 +497,7 @@ const DTYPES=["Draft","Spec","PRD","RFC","Design Review","Decision","Strategy","
 const VERKKAUPAR=["SFHR","Verkhönnun","Sky Lagoon","Múlakaffi"];
 /* ---------- Stillingar appsins (S.stillingar) ---------- */
 const DEF_STODUR=[{n:"Beiðni",c:"slate"},{n:"Tilboð",c:"violet"},{n:"Í vinnslu",c:"blue"},{n:"Í bið",c:"amber"},{n:"Í yfirferð",c:"teal"},{n:"Afhent",c:"green",lokid:true},{n:"Reikningsfært",c:"gray",lokid:true}];
+const noFolder=p=>{const t=(p?.thjonusta||[]); return t.length>0&&t.every(x=>x==="Almennt");};
 const DEF_THJ=["Teiknivinna","Lýsing","Almennt","Hönnun & ráðgjöf","Sala"];
 const DEF_STARF=[{sk:"DFM",nafn:"Dagur Fannar Möller",eg:true}];
 const COLORS=[["slate","Grár-blár"],["violet","Fjólublár"],["blue","Blár"],["amber","Gulur"],["teal","Grænblár"],["green","Grænn"],["gray","Grár"],["red","Rauður"]];
@@ -513,7 +514,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.18"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.19"; document.getElementById("appver").textContent="v"+APP_VERSION;
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
 const today=new Date(); today.setHours(0,0,0,0);
@@ -1685,7 +1686,7 @@ async function save(ev){
       const snidOn=document.getElementById("f-snid")?.checked, subN=snidOn?[...new Set(thj.flatMap(t=>SNID()[t]||[]))]:[];
       const undir=subN.map((n,k)=>{const snr=nr+"-"+pad(k+1); return {id:newId(),nr:snr,heiti:snr+" "+n,stada:"Not started",skiladagur:null,timar:0,serMappa:null,mappa:null,lysing:null};});
       const aklst=parseFloat(String(val("f-aklst")).replace(",","."))||null, tilbod=parseInt(String(val("f-tilbod")).replace(/\D/g,""))||null;
-      await saveSnapshot(s=>{s.verkefni.push({id,nr,stutt:name,nafn,stada:st,vidskiptavinur:cl?.name||null,verkkaupi:vk?.name||null,thjonusta:thj,timar:0,yfirlit:null,mappa:null,undirverk:undir,starfsmenn:[ME()],aklst,tilbod,...extra}); (s.odBidrod=s.odBidrod||[]).push({verkefniId:id,nafn,stofnad:new Date().toISOString()});});
+      await saveSnapshot(s=>{s.verkefni.push({id,nr,stutt:name,nafn,stada:st,vidskiptavinur:cl?.name||null,verkkaupi:vk?.name||null,thjonusta:thj,timar:0,yfirlit:null,mappa:null,undirverk:undir,starfsmenn:[ME()],aklst,tilbod,...extra}); if(!noFolder({thjonusta:thj})) (s.odBidrod=s.odBidrod||[]).push({verkefniId:id,nafn,stofnad:new Date().toISOString()});});
       patchLiveVerk(id,extra);
       toast(`${nafn} vistað`);
     }

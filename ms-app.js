@@ -67,7 +67,7 @@
     const k = keyOf(p);
     if (!k) {
       const pending = (S?.odBidrod || []).some(b => b.verkefniId === p.id);
-      return head() + `<div class="empty">${pending ? "Verið er að stofna möppu fyrir verkefnið í OneDrive…" : `Engin mappa fannst fyrir ${esc(p.nafn)} undir AERA/Verkefni.`}${pending ? "" : `<br><button type="button" class="btn primary" style="margin-top:10px" data-act="msmk:${esc(p.id)}">Stofna möppu með 01–08</button>`}</div>`;
+      return head() + `<div class="empty">${pending ? "Verið er að stofna möppu fyrir verkefnið í OneDrive…" : noFolder(p) ? "Almenn verkefni fá ekki eigin möppu í OneDrive. Fundargerðir og kvittanir þeirra fara í Óflokkað." : `Engin mappa fannst fyrir ${esc(p.nafn)} undir AERA/Verkefni.`}${pending ? "" : `<br><button type="button" class="btn primary" style="margin-top:10px" data-act="msmk:${esc(p.id)}">Stofna möppu með 01–08</button>`}</div>`;
     }
     const tr = TREE[k];
     const extra = `<a class="plink" data-act="msref:${esc(k)}">↻ Uppfæra</a><a class="plink" href="${esc(VK[k].webUrl)}" target="_blank" rel="noopener">Opna möppu</a>`;
@@ -146,6 +146,8 @@
     if (!p) { await mkFolder(ROOT, OFLOKKAD); return ROOT + "/" + OFLOKKAD; }
     await verkMoppur(true).catch(() => null);
     let k = keyOf(p);
+    // Almenn verkefni fá ekki eigin möppu: skjöl þeirra fara í Óflokkað nema mappa sé þegar til.
+    if (!k && noFolder(p)) { await mkFolder(ROOT, OFLOKKAD); return ROOT + "/" + OFLOKKAD; }
     if (!k) { await mkProj(p.nafn); await verkMoppur(true); k = keyOf(p); }
     if (!k) return ROOT + "/" + OFLOKKAD;
     const kids = await all(`/me/drive/items/${VK[k].id}/children?$select=name,folder&$top=999`);
@@ -214,6 +216,7 @@
     try {
       const bid = (S.odBidrod || []).slice();
       for (const b of bid) {
+        if (noFolder(findProj(b.verkefniId))) { await saveSnapshot(s => { s.odBidrod = (s.odBidrod || []).filter(x => x.verkefniId !== b.verkefniId); }); continue; }
         try {
           const p = findProj(b.verkefniId), it = await mkProj(p?.nafn || b.nafn);
           await saveSnapshot(s => { s.odBidrod = (s.odBidrod || []).filter(x => x.verkefniId !== b.verkefniId); const q = sFindP(s, b.verkefniId); if (q && !q.mappa) q.mappa = it.webUrl; });
