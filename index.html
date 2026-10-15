@@ -419,7 +419,7 @@ details.grp>summary{list-style:none;cursor:pointer}details.grp>summary::-webkit-
 #printarea{display:none}
 @media print{@page{size:A4;margin:14mm}body.printinv>*:not(#printarea){display:none!important}body.printinv #printarea{display:block!important}body.printinv{background:#fff!important}
   #printarea .inv{min-width:0;padding:0;border-radius:0;font-size:11pt}#printarea .inv-sund{break-before:page}#printarea .inv-tab th{-webkit-print-color-adjust:exact;print-color-adjust:exact}#printarea .inv-b{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-.phead{position:sticky;top:var(--hh,64px);z-index:4;background:var(--bg);margin-inline:-16px;padding:10px 16px 8px}
+.phead{position:sticky;top:calc(var(--hh,64px) + env(safe-area-inset-top,0px));z-index:4;background:var(--bg);margin-inline:-16px;padding:10px 16px 8px}
 @media (min-width:1024px){.phead{margin-inline:-40px;padding-inline:40px}}
 body.haspnew .fab{display:none!important}
 .actions.three-a .btn{padding:12px 8px}
@@ -554,7 +554,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.28"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.29"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
