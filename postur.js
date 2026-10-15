@@ -2,7 +2,7 @@
    tengja póst við verkefni (S.postar) og vista viðhengi í möppu verkefnisins. */
 (function () {
   const SEL = "$select=id,subject,from,receivedDateTime,bodyPreview,webLink,isRead,hasAttachments,conversationId";
-  const FOLD = [["inbox", "Innhólf"], ["aera", "AERA"], ["sentitems", "Sent"]];
+  const FOLD = [["inbox", "Innhólf"], ["aera", "AERA"], ["sentitems", "Sent"], ["tengilidir", "Tengiliðir"]];
   let fold = "inbox", q = "", list = null, next = null, loading = false, err = null, aeraId = null, target = null; // target = verkefni sem verið er að finna pósta fyrir
   const MSG = {}, ATT = {};
   const msOn = () => !!(window.MS && MS.on());
@@ -36,9 +36,19 @@
       <div class="lr" style="flex-direction:column;align-items:flex-end;gap:6px"><span class="lc">${esc(when(m.receivedDateTime))}</span>
       ${!L && MCP ? (target ? `<button type="button" class="btn" data-act="polink:${esc(m.id)}:${esc(target)}" style="padding:4px 10px;min-height:30px">Tengja</button>` : g ? `<button type="button" class="btn" data-act="polink:${esc(m.id)}:${esc(g.id)}" style="padding:4px 10px;min-height:30px" title="Tengja við ${esc(g.nafn)}">→ ${esc(g.nr)}</button>` : "") : ""}</div></div>`; };
 
+  function vTengilidir() {
+    const t = q.toLowerCase(), all = contacts(), xs = all.filter(c => !t || c.a.toLowerCase().includes(t) || (c.n || "").toLowerCase().includes(t) || (c.v || "").toLowerCase().includes(t));
+    const inBook = a => BOOK().some(x => x.a.toLowerCase() === a.toLowerCase());
+    return `<form id="poq" class="leitbox" style="margin-top:8px"><input id="poqi" type="search" placeholder="Leita að tengilið…" value="${esc(q)}" enterkeyhint="search" autocomplete="off"></form>
+      <div class="stat-row" style="margin-top:10px">${FOLD.map(([k, l]) => `<button type="button" class="chipbtn" data-act="pofold:${k}" aria-pressed="${fold === k}">${l}</button>`).join("")}<button type="button" class="chipbtn" data-act="poharv:" title="Sækja netföng úr pósti">↻</button></div>
+      <p class="hint" style="margin:10px 0 0">${all.length} tengiliðir · safnast sjálfkrafa úr pósti sem þú sendir og færð, og úr Viðskiptavinum. Þeir sem þú sendir oftast á eru efstir.</p>
+      ${xs.length ? `<div class="llist" style="margin-top:8px">${xs.slice(0, 300).map(c => `<div class="lrow"><div class="ll"><span class="avat">${esc((c.n || c.a).trim()[0]?.toUpperCase() || "?")}</span></div><div class="lm"><div class="lt">${esc(c.n || c.a)}</div><div class="ls">${esc([c.n ? c.a : "", c.v].filter(Boolean).join(" · "))}</div></div>
+        <div class="lr" style="gap:6px">${MCP ? `<button type="button" class="btn" data-act="poto:${esc(c.a)}" style="padding:4px 10px;min-height:30px">✉</button>` : ""}${MCP && inBook(c.a) ? `<button type="button" class="btn" data-act="pofor:${esc(c.a)}" style="padding:4px 10px;min-height:30px" aria-label="Gleyma ${esc(c.a)}">✕</button>` : ""}</div></div>`).join("")}</div>` : `<div class="empty" style="margin-top:16px">${q ? "Enginn fannst." : "Engir tengiliðir ennþá. Ýttu á ↻ til að sækja netföng úr póstinum."}</div>`}`;
+  }
   window.vPostur = function () {
     if (!msOn()) return `<div class="empty" style="margin-top:16px">Tengdu Microsoft til að sjá pósthólfið þitt í appinu.${window.msMissing ? msMissing() : ""}</div>`;
-    if (!list && !loading) load(false);
+    if (fold === "tengilidir") return vTengilidir();
+    if (!list && !loading) { load(false); harvest(false).catch(() => {}); }
     const tp = target && findProj(target);
     return `${tp ? `<div class="card" style="margin:8px 0;display:flex;align-items:center;gap:10px"><div class="grow">Finndu pósta fyrir <b>${esc(tp.nr)} ${esc(tp.stutt)}</b> og ýttu á „Tengja“.</div><button type="button" class="btn" data-act="potarget:">Lokið</button></div>` : ""}
       <form id="poq" class="leitbox" style="margin-top:8px"><input id="poqi" type="search" placeholder="Leita í pósti…" value="${esc(q)}" enterkeyhint="search" autocomplete="off"></form>
@@ -98,8 +108,74 @@
   const addrs = v => String(v || "").split(/[,;]\s*/).map(x => x.trim()).filter(Boolean).map(x => { const m = x.match(/<([^>]+)>/); return { emailAddress: { address: (m ? m[1] : x).trim() } }; });
   const validA = v => addrs(v).every(a => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.emailAddress.address));
   const toHtml = t => `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt">${esc(t).replace(/\n/g, "<br>")}</div>`;
-  const contacts = () => { const set = new Map(); vskList().forEach(c => { if (c.netfang) set.set(c.netfang, c.name); if (c.netfangT) set.set(c.netfangT, c.tengilidur || c.name); });
-    (list || []).forEach(m => { const a = m.from?.emailAddress; if (a?.address && !set.has(a.address)) set.set(a.address, a.name || ""); }); return [...set.entries()]; };
+  /* Netfangaskrá: allir sem póstur hefur borist frá eða verið sendur til (S.netfangaskra [{a,n,t,c}]) + Viðskiptavinir */
+  const BOOK = () => S?.netfangaskra || [];
+  const contacts = () => { const m = new Map();
+    BOOK().forEach(x => m.set(x.a.toLowerCase(), { a: x.a, n: x.n || "", t: x.t || "", c: x.c || 0 }));
+    vskList().forEach(c => [[c.netfang, c.name], [c.netfangT, c.tengilidur || c.name]].forEach(([a, n]) => { if (!a) return; const k = a.toLowerCase(), o = m.get(k); m.set(k, { a, n: o?.n || n || "", t: o?.t || "", c: (o?.c || 0) + 0.5, v: c.name }); }));
+    return [...m.values()].sort((x, y) => (y.c - x.c) || String(y.t).localeCompare(String(x.t))); };
+  // Bæta við/uppfæra í netfangaskrá (ein vistun)
+  async function remember(list, sent) {
+    const me = (MS.user()?.email || "").toLowerCase(), now = new Date().toISOString();
+    const xs = list.filter(r => r?.a && /@/.test(r.a) && r.a.toLowerCase() !== me && !/no-?reply|noreply|mailer-daemon|notifications?@/i.test(r.a));
+    if (!xs.length) return;
+    let changed = false;
+    const book = BOOK().map(x => ({ ...x })), idx = new Map(book.map((x, i) => [x.a.toLowerCase(), i]));
+    xs.forEach(r => { const k = r.a.toLowerCase(), i = idx.get(k);
+      if (i == null) { book.push({ a: r.a, n: r.n || "", t: r.t || now, c: sent ? 1 : 0.2 }); idx.set(k, book.length - 1); changed = true; }
+      else { const o = book[i]; if (r.n && !o.n) { o.n = r.n; changed = true; } if (sent) { o.c = (o.c || 0) + 1; o.t = now; changed = true; } else if (r.t && r.t > (o.t || "")) { o.t = r.t; changed = true; } } });
+    if (!changed) return;
+    book.sort((x, y) => (y.c - x.c) || String(y.t).localeCompare(String(x.t)));
+    await saveSnapshot(st => { st.netfangaskra = book.slice(0, 800); });
+  }
+  // Safna netföngum úr Sent og Innhólfi (einu sinni á dag á hverju tæki)
+  async function harvest(force) {
+    let last = 0; try { last = +localStorage.getItem("aera-harvest") || 0; } catch (e) {}
+    if (!force && Date.now() - last < 20 * 3600 * 1000) return;
+    try { localStorage.setItem("aera-harvest", String(Date.now())); } catch (e) {}
+    const r = [];
+    const sent = (await MS.g(`/me/mailFolders/sentitems/messages?$top=200&$orderby=sentDateTime%20desc&$select=toRecipients,ccRecipients,sentDateTime`)).value || [];
+    sent.forEach(m => [...(m.toRecipients || []), ...(m.ccRecipients || [])].forEach(x => r.push({ a: x.emailAddress?.address, n: x.emailAddress?.name, t: m.sentDateTime, s: 1 })));
+    const inb = (await MS.g(`/me/mailFolders/inbox/messages?$top=200&$orderby=receivedDateTime%20desc&$select=from,receivedDateTime`)).value || [];
+    inb.forEach(m => r.push({ a: m.from?.emailAddress?.address, n: m.from?.emailAddress?.name, t: m.receivedDateTime }));
+    // telja sendingar sem vægi
+    const cnt = new Map(); r.filter(x => x.s && x.a).forEach(x => cnt.set(x.a.toLowerCase(), (cnt.get(x.a.toLowerCase()) || 0) + 1));
+    const me = (MS.user()?.email || "").toLowerCase(), book = BOOK().map(x => ({ ...x })), idx = new Map(book.map((x, i) => [x.a.toLowerCase(), i]));
+    r.forEach(x => { if (!x.a || !/@/.test(x.a) || x.a.toLowerCase() === me || /no-?reply|noreply|mailer-daemon|notifications?@/i.test(x.a)) return; const k = x.a.toLowerCase(), i = idx.get(k);
+      if (i == null) { book.push({ a: x.a, n: x.n || "", t: x.t, c: (cnt.get(k) || 0) + 0.2 }); idx.set(k, book.length - 1); }
+      else { const o = book[i]; if (!o.n && x.n) o.n = x.n; if ((x.t || "") > (o.t || "")) o.t = x.t; if (force || !o._h) { o.c = Math.max(o.c || 0, (cnt.get(k) || 0) + 0.2); } } });
+    book.forEach(o => delete o._h); book.sort((x, y) => (y.c - x.c) || String(y.t).localeCompare(String(x.t)));
+    await saveSnapshot(st => { st.netfangaskra = book.slice(0, 800); });
+  }
+  window.poHarvest = harvest;
+
+  /* Viðtakendareitur eins og í Outlook: nöfn sem flísar, tillögur um leið og skrifað er */
+  function rcptField(id, init) {
+    const box = document.getElementById(id + "-box"), hid = document.getElementById(id), inp = box.querySelector("input"), sug = document.getElementById(id + "-sug");
+    let chips = addrs(init).map(x => ({ a: x.emailAddress.address, n: (contacts().find(c => c.a.toLowerCase() === x.emailAddress.address.toLowerCase()) || {}).n || "" })), act = -1, cur = [];
+    const sync = () => { hid.value = chips.map(c => c.a).join(", "); box.querySelectorAll(".rchip").forEach(e => e.remove());
+      chips.forEach((c, i) => inp.insertAdjacentHTML("beforebegin", `<span class="rchip${/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.a) ? "" : " bad"}" title="${esc(c.a)}">${esc(c.n || c.a)}<button type="button" data-ri="${i}" aria-label="Fjarlægja ${esc(c.a)}">✕</button></span>`));
+      box.querySelectorAll("[data-ri]").forEach(b => b.onclick = e => { e.stopPropagation(); chips.splice(+b.dataset.ri, 1); sync(); inp.focus(); }); };
+    const add = (a, n) => { a = a.trim().replace(/[,;]+$/, ""); if (!a) return; if (!chips.some(c => c.a.toLowerCase() === a.toLowerCase())) chips.push({ a, n: n || (contacts().find(c => c.a.toLowerCase() === a.toLowerCase()) || {}).n || "" }); inp.value = ""; hide(); sync(); };
+    const hide = () => { sug.hidden = true; act = -1; };
+    const show = () => { const t = inp.value.trim().toLowerCase(); if (!t) return hide();
+      cur = contacts().filter(c => !chips.some(x => x.a.toLowerCase() === c.a.toLowerCase()) && (c.a.toLowerCase().includes(t) || (c.n || "").toLowerCase().split(/\s+/).some(w => w.startsWith(t)) || (c.n || "").toLowerCase().startsWith(t) || (c.v || "").toLowerCase().startsWith(t))).slice(0, 7);
+      if (!cur.length) return hide(); act = 0;
+      sug.innerHTML = cur.map((c, i) => `<button type="button" class="rsug${i === act ? " on" : ""}" data-si="${i}"><b>${esc(c.n || c.a)}</b>${c.n ? `<small>${esc(c.a)}</small>` : ""}${c.v && c.v !== c.n ? `<small>${esc(c.v)}</small>` : ""}</button>`).join(""); sug.hidden = false;
+      sug.querySelectorAll("[data-si]").forEach(b => b.onmousedown = e => { e.preventDefault(); const c = cur[+b.dataset.si]; add(c.a, c.n); inp.focus(); }); };
+    const mark = () => sug.querySelectorAll(".rsug").forEach((b, i) => b.classList.toggle("on", i === act));
+    inp.addEventListener("input", () => { if (/[,;]\s*$/.test(inp.value)) return add(inp.value); show(); });
+    inp.addEventListener("keydown", e => {
+      if (!sug.hidden && (e.key === "ArrowDown" || e.key === "ArrowUp")) { e.preventDefault(); act = (act + (e.key === "ArrowDown" ? 1 : -1) + cur.length) % cur.length; mark(); return; }
+      if (e.key === "Enter" || e.key === "Tab") { if (!sug.hidden && cur[act]) { e.preventDefault(); add(cur[act].a, cur[act].n); return; } if (inp.value.trim()) { if (e.key === "Enter") e.preventDefault(); add(inp.value); } return; }
+      if (e.key === "Backspace" && !inp.value && chips.length) { chips.pop(); sync(); }
+      if (e.key === "Escape") hide(); });
+    inp.addEventListener("blur", () => setTimeout(() => { if (inp.value.trim()) add(inp.value); hide(); }, 120));
+    box.addEventListener("click", () => inp.focus());
+    sync();
+    return { flush: () => { if (inp.value.trim()) add(inp.value); } };
+  }
+
   const sig = () => `\n\nKveðja,\n${MS.user()?.name || ""}\nAERA Studio`;
 
   window.poCompose = function (o = {}) {
@@ -113,9 +189,8 @@
       ${canSend ? "" : `<div class="msg err" style="margin-bottom:10px">Appið hefur ekki enn leyfi til að senda póst. Tengstu Microsoft aftur og samþykktu nýju heimildina.<br><button type="button" class="btn" style="margin-top:8px" id="po-relog">Tengjast aftur</button></div>`}
       <form id="pocf" novalidate>
       ${mode === "reply" || mode === "replyAll" ? `<p class="hint" style="margin:0">Til: ${esc(mode === "reply" ? fromName(src) : [fromName(src), people(src.toRecipients), people(src.ccRecipients)].filter(Boolean).join(", "))}</p>` :
-        `<label><span class="lbl">Til <span class="req">*</span></span><input id="po-to" list="po-dl" value="${esc(o.to || "")}" placeholder="netfang@dæmi.is, …" autocomplete="off" inputmode="email"></label>
-         <label>Afrit (cc)<input id="po-cc" list="po-dl" value="${esc(o.cc || "")}" autocomplete="off" inputmode="email"></label>
-         <datalist id="po-dl">${contacts().map(([a, n]) => `<option value="${esc(a)}">${esc(n)}</option>`).join("")}</datalist>`}
+        `<div class="rfield"><span class="lbl">Til <span class="req">*</span></span><div class="rbox" id="po-to-box"><input autocomplete="off" inputmode="email" aria-label="Viðtakendur" placeholder="Nafn eða netfang"></div><div class="rsugs" id="po-to-sug" hidden></div><input type="hidden" id="po-to"></div>
+         <div class="rfield"><span class="lbl">Afrit (cc)</span><div class="rbox" id="po-cc-box"><input autocomplete="off" inputmode="email" aria-label="Afrit"></div><div class="rsugs" id="po-cc-sug" hidden></div><input type="hidden" id="po-cc"></div>`}
       ${mode === "new" ? `<label><span class="lbl">Efni <span class="req">*</span></span><input id="po-subj" value="${esc(subj)}" autocomplete="off"></label>` : `<p class="hint" style="margin:0">Efni: ${esc(subj)}</p>`}
       <label>Texti<textarea id="po-body" rows="9">${esc(o.body != null ? o.body : sig())}</textarea></label>
       <div><div class="kind" style="margin-bottom:6px">Viðhengi</div><div id="po-atts" class="poatts"></div>
@@ -127,12 +202,13 @@
     const drawAtts = () => { document.getElementById("po-atts").innerHTML = atts.length ? atts.map((a, i) => `<span class="chipbtn" style="display:inline-flex;gap:6px;align-items:center">📎 ${esc(a.name)} <small>${esc(kb(a.size))}</small><button type="button" class="x" data-rm="${i}" aria-label="Fjarlægja">✕</button></span>`).join(" ") : `<span class="hint">Engin.</span>`;
       sheet.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { atts.splice(+b.dataset.rm, 1); drawAtts(); }); };
     drawAtts();
+    const RF = ["po-to", "po-cc"].filter(x => document.getElementById(x + "-box")).map(x => rcptField(x, x === "po-to" ? o.to || "" : o.cc || ""));
     const rl = document.getElementById("po-relog"); if (rl) rl.onclick = () => MS.login().then(() => { toast("Tengt – nú má senda"); poCompose(o); }).catch(e => toast(e.message));
     document.getElementById("po-file").onchange = e => { [...e.target.files].forEach(f => atts.push({ name: f.name, type: f.type || "application/octet-stream", size: f.size, data: f })); e.target.value = ""; drawAtts(); };
     document.getElementById("po-c").onclick = closeSheet;
-    const bt = document.getElementById("po-body"); if (!("ontouchstart" in window)) setTimeout(() => { (document.getElementById("po-to") && !o.to ? document.getElementById("po-to") : bt).focus(); if (document.activeElement === bt) bt.setSelectionRange(0, 0); }, 60);
+    const bt = document.getElementById("po-body"); if (!("ontouchstart" in window)) setTimeout(() => { (document.getElementById("po-to-box") && !o.to ? document.querySelector("#po-to-box input") : bt).focus(); if (document.activeElement === bt) bt.setSelectionRange(0, 0); }, 60);
     document.getElementById("pocf").onsubmit = async ev => {
-      ev.preventDefault(); msg("");
+      ev.preventDefault(); msg(""); RF.forEach(f => f.flush());
       const to = val("po-to"), cc = val("po-cc"), subject = mode === "new" ? val("po-subj") : subj, text = val("po-body"), pid = mode === "new" ? val("po-proj") : pid0;
       if (mode === "new" || mode === "forward") { if (!to) return msg("Settu inn viðtakanda.", "err"); if (!validA(to) || (cc && !validA(cc))) return msg("Athugaðu netföngin.", "err"); }
       if (mode === "new" && !subject) return msg("Skrifaðu efni.", "err");
@@ -152,6 +228,8 @@
           await MS.g(`/me/messages/${encodeURIComponent(dr.id)}/send`, { method: "POST", body: {} });
         }
         toast("Póstur sendur"); closeSheet();
+        const rc = mode === "reply" ? [{ a: src.from?.emailAddress?.address, n: src.from?.emailAddress?.name }] : mode === "replyAll" ? [src.from, ...(src.toRecipients || []), ...(src.ccRecipients || [])].map(x => ({ a: x?.emailAddress?.address, n: x?.emailAddress?.name })) : [...addrs(to), ...addrs(cc)].map(x => ({ a: x.emailAddress.address, n: (contacts().find(c => c.a.toLowerCase() === x.emailAddress.address.toLowerCase()) || {}).n || "" }));
+        remember(rc, true).catch(() => {});
         if (o.onSent) try { await o.onSent(); } catch (e) {}
         if (pid) setTimeout(() => linkSent(subject, pid), 3000);
       } catch (e) { btn.disabled = false; btn.textContent = "Senda"; msg(esc(/403|denied|scope/i.test(e.message) ? "Appið hefur ekki leyfi til að senda. Tengstu Microsoft aftur og samþykktu heimildina." : e.message), "err"); }
@@ -169,6 +247,9 @@
     if (k === "ponew") { poCompose({ pid: r[0] || null, subject: r[0] && findProj(r[0]) ? findProj(r[0]).nr + " " + findProj(r[0]).stutt + " – " : "" }); return; }
     if (k === "poreply") { poCompose({ mode: r[0], mid: r.slice(1).join(":") }); return; }
     if (k === "pofold") { fold = r[0]; q = ""; reset(); render(); return; }
+    if (k === "poharv") { toast("Sæki netföng úr pósti…"); harvest(true).then(() => toast("Tengiliðir uppfærðir")).catch(e => toast(e.message)); return; }
+    if (k === "poto") { poCompose({ to: r.join(":") }); return; }
+    if (k === "pofor") { const a = r.join(":").toLowerCase(); if (confirm("Gleyma " + a + "?")) saveSnapshot(st => { st.netfangaskra = (st.netfangaskra || []).filter(x => x.a.toLowerCase() !== a); }); return; }
     if (k === "poref") { reset(); render(); return; }
     if (k === "pomore") { load(true); render(); return; }
     if (k === "potarget") { target = r[0] || null; render(); return; }
@@ -180,6 +261,7 @@
       attBlob(r[0], r[1]).then(async ({ blob, name }) => { const dir = await msProjSub(p, "01", "01 Móttekið"); await msSaveFile(dir, name, blob, blob.type, false); toast("Vistað í " + dir.replace(/^AERA\/Verkefni\//, "").replace(/\//g, " › ")); }).catch(e => toast(e.message)); return; }
   };
   document.addEventListener("submit", e => { if (e.target.id === "poqi" || e.target.id === "poq") { e.preventDefault(); q = (document.getElementById("poqi")?.value || "").trim(); reset(); render(); } });
+  document.addEventListener("input", e => { if (e.target.id === "poqi" && fold === "tengilidir") { q = e.target.value.trim(); const pos = e.target.selectionStart; render(); const n = document.getElementById("poqi"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} } } });
   document.addEventListener("change", e => { const id = e.target.dataset?.polink; if (id != null) link(id, e.target.value || null); });
   document.addEventListener("search", e => { if (e.target.id === "poqi" && !e.target.value && q) { q = ""; reset(); render(); } }, true);
 

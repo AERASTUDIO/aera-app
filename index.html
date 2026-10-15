@@ -429,6 +429,14 @@ body.haspnew .fab{display:none!important}
 .dbadge{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--dc);color:#fff;font-weight:600;font-size:13px;flex:none}
 .skseg{flex-wrap:wrap}.skseg button{font-size:13px}
 .side .tc{display:none}
+.rfield{position:relative;display:flex;flex-direction:column;gap:6px}.rfield .lbl{font-size:13px;color:var(--muted)}
+.rbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:46px;padding:6px 8px;border:1px solid var(--line);border-radius:12px;background:var(--field,var(--surface));cursor:text}
+.rbox input{flex:1;min-width:120px;border:0!important;background:transparent!important;padding:6px 4px!important;min-height:0!important;box-shadow:none!important;outline:0}
+.rchip{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:var(--ink);border-radius:99px;padding:3px 4px 3px 10px;font-size:13.5px;max-width:100%}.rchip.bad{outline:1px solid #c0392b}
+.rchip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:99px}
+.rsugs{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--sheet,var(--bg));border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px var(--shadow,rgba(0,0,0,.3));overflow:hidden;margin-top:4px}
+.rsug{display:flex;flex-direction:column;align-items:flex-start;width:100%;border:0;background:transparent;color:var(--ink);text-align:left;padding:9px 12px;cursor:pointer;font:inherit}.rsug small{color:var(--muted);font-size:12px}.rsug.on,.rsug:hover{background:var(--accent-soft)}
+.avat{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--ink);font-weight:600;font-size:13px}
 .pobody{display:block;width:100%;height:70vh;border:0;border-radius:12px;background:#fff;margin-top:14px}.porow .podot{display:inline-block;width:8px;height:8px;border-radius:50%}.porow.unread .podot{background:var(--accent)}.porow.unread .pofrom{font-weight:600}.porow .ls{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.posel select{width:auto;max-width:240px;min-height:44px}
 .reloading{animation:relo .9s ease-in-out infinite}@keyframes relo{50%{opacity:.35}}
 .seg2{margin:0 0 4px}.seg2 button{font-size:13.5px}
@@ -546,7 +554,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.26"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.27"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
