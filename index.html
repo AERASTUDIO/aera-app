@@ -429,6 +429,7 @@ body.haspnew .fab{display:none!important}
 .dbadge{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--dc);color:#fff;font-weight:600;font-size:13px;flex:none}
 .skseg{flex-wrap:wrap}.skseg button{font-size:13px}
 .side .tc{display:none}
+.kt{font-variant-numeric:tabular-nums}
 .rfield{position:relative;display:flex;flex-direction:column;gap:6px}.rfield .lbl{font-size:13px;color:var(--muted)}
 .rbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:46px;padding:6px 8px;border:1px solid var(--line);border-radius:12px;background:var(--field,var(--surface));cursor:text}
 .rbox input{flex:1;min-width:120px;border:0!important;background:transparent!important;padding:6px 4px!important;min-height:0!important;box-shadow:none!important;outline:0}
@@ -554,7 +555,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.29"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.30"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
@@ -710,11 +711,11 @@ document.addEventListener("change",e=>{const id=e.target.dataset?.pasgn; if(id!=
 let showLater=false;
 /* ---------- Skeiðklukka (S.klukka samstillist milli tækja) ---------- */
 const klukka=()=>S?.klukka||null;
-const elapsed=k=>{const m=Math.max(0,Math.round((Date.now()-new Date(k.start))/60000)); return Math.floor(m/60)+":"+pad(m%60);};
+const elapsed=k=>{const t=Math.max(0,Math.floor((Date.now()-new Date(k.start))/1000)); return Math.floor(t/3600)+":"+pad(Math.floor(t/60)%60)+":"+pad(t%60);};
 function klukkaBanner(p){const k=klukka(); if(!k||(p&&k.pid!==p.id)) return ""; const q=findProj(k.pid), u=k.sid?findSub(k.sid)?.u:null;
   return `<div class="klukka"><div class="lm"><div class="ls">⏱ Klukka í gangi · frá kl. ${esc(hhmm(k.start))}</div><div class="lt">${esc(q?.nafn||"Verkefni")}${u?" · "+esc(subName(u)):""}</div>${k.desc?`<div class="ls">${esc(k.desc)}</div>`:""}</div>
   <b class="kt" data-start="${esc(k.start)}">${elapsed(k)}</b><div class="kbtns"><button type="button" class="btn primary" data-act="kstop">Stoppa og skrá</button><button type="button" class="btn" data-act="kcancel" aria-label="Hætta við klukku">✕</button></div></div>`;}
-setInterval(()=>document.querySelectorAll(".kt[data-start]").forEach(el=>el.textContent=elapsed({start:el.dataset.start})),20000);
+setInterval(()=>document.querySelectorAll(".kt[data-start]").forEach(el=>el.textContent=elapsed({start:el.dataset.start})),1000);
 async function stopKlukka(){const k=klukka(); if(!k) return; const st=new Date(k.start), en=new Date();
   const mins=Math.max(1,Math.round((en-st)/60000)), t=Math.round(mins/60*100)/100, dt=isoDay(st), fr=pad(st.getHours())+":"+pad(st.getMinutes()), to=pad(en.getHours())+":"+pad(en.getMinutes());
   const desc=k.desc||"Vinna", lys=lysFmt(dt,desc,t), id=newId();
@@ -1535,7 +1536,7 @@ function drawForm(){
     <label>Staða<select id="f-status">${STODUR().filter(x=>!x.lokid).map(x=>`<option>${esc(x.n)}</option>`).join("")}</select></label>
     ${projFields("f",null)}
     <div><div class="kind" style="margin-bottom:6px">Þjónusta</div><div class="chips">${THJ().map(t=>`<label><input type="checkbox" name="thj" value="${t}">${t}</label>`).join("")}</div></div>
-    <label class="chk" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-size:14.5px"><input type="checkbox" id="f-snid" checked style="width:auto">Stofna undirverk eftir sniðmáti þjónustu</label>
+    <label class="chk" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-size:14.5px"><input type="checkbox" id="f-snid" style="width:auto">Stofna undirverk eftir sniðmáti þjónustu</label>
     <div class="two"><label>Áætlaðir tímar<input id="f-aklst" inputmode="decimal" placeholder="t.d. 40"></label><label>Tilboð (kr.)<input id="f-tilbod" inputmode="numeric" placeholder="t.d. 450000"></label></div>
     <p class="hint">Fær verknúmerið <b class="nr">${nextProjNr()}</b>.</p>`;
   if(kind==="vsk") f=vskFormHTML("f",null);
