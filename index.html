@@ -262,6 +262,12 @@ nav.mbar{background:var(--bg);border-top-color:var(--line)}
 .lrow .lr{flex:none;display:flex;gap:6px;align-items:center}
 .lrow .lc{font-size:12.5px;color:var(--muted)}
 .lrow .chev{margin:0}
+details.fold>summary{list-style:none}details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .lt::before{content:"›";display:inline-block;width:14px;color:var(--muted);transition:transform .15s}
+details.fold[open]>summary .lt::before{transform:rotate(90deg)}
+.fitems{padding:0 0 6px 14px}
+.lrow.fl{text-decoration:none;color:var(--ink);padding:9px 8px}
+.lrow.fl .lt{font-size:14px}.lrow.fl .lr{color:var(--muted)}
 .ldel{display:none;flex:none;width:32px;height:32px;place-items:center;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer}
 .ldel:hover{color:var(--ink);background:#1f2326}
 @media (hover:hover){.lrow:hover .ldel{display:grid}.lrow:hover .chev{display:none}}
@@ -598,6 +604,7 @@ function dVerk(p){
       ["Tímabil verks",timabilTxt(p)],["Teikningar frá",esc(p.teikningarFra||"")],["Tímar",hrs(p.timar)],
       ["Mappa",p.mappa?`<a class="plink" href="${esc(p.mappa)}" target="_blank" rel="noopener">Opna möppu</a>`:""]])}</dl>${linkBtns(p,{edit:"verk"})}</div>
   ${textCard("Lýsing",p.lysing)}
+  ${skrarHTML(p)}
   <div class="viewtitle">Undirverk · ${subs.length}</div>${subs.length?`<div class="card"><div class="list" style="gap:2px">${openS.concat(doneS).map(subRow).join("")}</div></div>`:`<div class="empty">Engin undirverk.</div>`}
   ${addRow([["undir","+ Undirverk"],["tima","+ Tími"],["fund","+ Fundur"],["skjal","+ Skjal"]])}
   ${(()=>{const xs=skjol().filter(x=>x.projectId===p.id); return xs.length?`<div class="viewtitle">Skjöl · ${xs.length}</div><div class="list">${xs.map(x=>skjalCard(x,{noProj:true})).join("")}</div>`:"";})()}
@@ -1129,8 +1136,27 @@ function importView(){
     catch(e){out.innerHTML=`<div class="msg err">${esc(e?.message||"Gat ekki lesið skrána.")}</div>`;}};
 }
 render();
+/* ---------- Skrár í OneDrive (lesnar af Claude, geymdar í app/skrar) ---------- */
+let SK=null;
+const kb=n=>{n=+n||0; if(!n) return "Tómt"; const u=["B","KB","MB","GB"]; let i=0; while(n>=1024&&i<3){n/=1024;i++;} return (n<10&&i?n.toFixed(1):Math.round(n)).toString().replace(".",",")+" "+u[i];};
+const ODTYPE={pdf:"PDF",docx:"Word",doc:"Word",xlsx:"Excel",xls:"Excel",pptx:"PowerPoint",dwg:"AutoCAD",rvt:"Revit",c2p:"Capture",zip:"Zip",jpg:"Mynd",jpeg:"Mynd",png:"Mynd",tm:"Twinmotion",pcp:"Plot"};
+const odUrl=(parts,isFile)=>{const u=SK.grunnur+parts.map(encodeURIComponent).join("/"); return isFile&&/\.(docx?|xlsx?|pptx?)$/i.test(parts[parts.length-1])?u+"?web=1":u;};
+function projFolder(p){if(!SK?.moppur) return null; const k=Object.keys(SK.moppur).find(k=>k===p.nafn)||Object.keys(SK.moppur).find(k=>p.nr&&k.startsWith(p.nr+" ")); return k?{k,...SK.moppur[k]}:null;}
+function skrarHTML(p){
+  const m=projFolder(p); if(!SK) return "";
+  if(!m) return `<div class="viewtitle">Skrár í OneDrive</div><div class="empty">Engin mappa fannst fyrir ${esc(p.nafn)} undir AERA/Verkefni.</div>`;
+  const item=(parts,it)=>{const isF=it.t==="f", ext=isF?(it.n.split(".").pop()||"").toLowerCase():"";
+    return `<a class="lrow fl" href="${esc(odUrl(parts.concat(it.n),isF))}" target="_blank" rel="noopener"><div class="lm"><div class="lt">${isF?"":"📁 "}${esc(it.n)}</div><div class="ls">${esc([isF?(ODTYPE[ext]||ext.toUpperCase()):"Mappa",kb(it.s)].join(" · "))}</div></div><div class="lr"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></div></a>`;};
+  const rows=(m.atridi||[]).map(d=>{const parts=[m.k,d.n], has=d.s>0;
+    return `<details class="fold"${has&&/^0[478]/.test(d.n)?" open":""}><summary class="lrow"><div class="lm"><div class="lt"${has?"":' style="color:var(--muted)"'}>${esc(d.n)}</div><div class="ls">${esc(has?kb(d.s)+(d.i?` · ${d.i.length} ${d.i.length===1?"atriði":"atriði"}`:""):"Tóm mappa")}</div></div>
+      <a class="plink" href="${esc(odUrl(parts))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Opna</a></summary>
+      ${d.i&&d.i.length?`<div class="fitems">${d.i.map(it=>item(parts,it)).join("")}</div>`:has?`<div class="fitems"><div class="ls" style="padding:8px 0">Opnaðu möppuna til að sjá innihaldið.</div></div>`:""}</details>`;}).join("");
+  return `<div class="viewtitle" style="display:flex;justify-content:space-between;gap:8px"><span>Skrár í OneDrive</span><a class="plink" href="${esc(odUrl([m.k]))}" target="_blank" rel="noopener">Opna möppu</a></div>
+  <div class="llist">${rows}</div><p class="hint" style="margin-top:8px">Listi síðast uppfærður ${esc(fmtDate(SK.uppfaert))}. Biddu Claude að „uppfæra skráalistann“ til að fá nýjar skrár.</p>`;
+}
 window.aeraStart=function(db){
   DB=db; MCP={local:true}; document.getElementById("syncbtn").hidden=false; document.getElementById("logoutbtn").hidden=false; document.getElementById("fab").hidden=false;
+  db.watch("app/skrar",s=>{SK=s.exists?s.data():null; if(S) render();},()=>{});
   db.watch("app/state",s=>{if(s.exists){S=s.data(); render();} else if(!s.fromCache) importView();},
     e=>{document.getElementById("view").innerHTML=`<h2 class="big">Gögn ekki aðgengileg</h2><div class="empty">${esc(e?.code==="permission-denied"?"Þessi aðgangur hefur ekki leyfi til að lesa gögnin.":(e?.message||"Óþekkt villa"))}</div>`;});
 };
