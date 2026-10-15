@@ -188,7 +188,39 @@
     return { flush: () => { if (inp.value.trim()) add(inp.value); } };
   }
 
-  const sig = () => `\n\nKveðja,\n${MS.user()?.name || ""}\nAERA Studio`;
+  /* Undirskrift (íslenska og enska) – stillingar.undirskrift */
+  const SIG = () => ({ kvedja: "Kveðja / Best regards", nafn: MS.user()?.name || "Dagur Fannar Möller", titillIS: "Eigandi", titillEN: "Owner", fyrirtaeki: "AERA Studio", netfang: MS.user()?.email || "dagur@sonik.is", simi: "", vefur: "", ...(CFG().undirskrift || {}) });
+  const LOGO_URL = "https://aerastudio.github.io/aera-app/icons/sig-logo.png", LOGO_CID = "aeralogo@aerastudio";
+  window.poSigHTML = (logo, o) => { const g = { ...SIG(), ...(o || {}) }, E = x => esc(x || ""), web = String(g.vefur || "").replace(/^https?:\/\//, "");
+    return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Calibri,Arial,Helvetica,sans-serif;color:#1c2126">
+${g.kvedja ? `<tr><td colspan="2" style="padding:0 0 14px 0;font-size:10.5pt;color:#1c2126">${E(g.kvedja)},</td></tr>` : ""}
+<tr><td style="padding:0 16px 0 0;vertical-align:middle"><img src="${logo}" width="130" height="55" alt="AERA Studio" style="display:block;border:0;width:130px;height:55px"></td>
+<td style="border-left:2px solid #1f4e79;padding:2px 0 2px 16px;vertical-align:middle;font-size:10pt;line-height:15pt">
+<span style="font-size:11.5pt;font-weight:bold;color:#0b1e33">${E(g.nafn)}</span><br>
+<span style="color:#5b7fa6">${[g.titillIS, g.titillEN].filter(Boolean).map(E).join(" &middot; ")}</span><br>
+<span style="color:#1c2126">${E(g.fyrirtaeki)}</span><br>
+${g.netfang ? `<a href="mailto:${E(g.netfang)}" style="color:#1f4e79;text-decoration:none">${E(g.netfang)}</a>` : ""}${g.simi ? `<br><span style="color:#1c2126">S. / Tel. ${E(g.simi)}</span>` : ""}${web ? `<br><a href="https://${E(web)}" style="color:#1f4e79;text-decoration:none">${E(web)}</a>` : ""}
+</td></tr></table>`; };
+  let logoB64 = null;
+  const logoAtt = async () => { if (!logoB64) logoB64 = await b64(await (await fetch("icons/sig-logo.png")).blob());
+    return { "@odata.type": "#microsoft.graph.fileAttachment", name: "aera-logo.png", contentType: "image/png", contentBytes: logoB64, isInline: true, contentId: LOGO_CID }; };
+  window.poSigCopy = async () => { const h = poSigHTML(LOGO_URL);
+    try { await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([h], { type: "text/html" }), "text/plain": new Blob([document.createRange().createContextualFragment(h).textContent.replace(/\n\s*/g, "\n").trim()], { type: "text/plain" }) })]); toast("Undirskrift afrituð – límdu hana í undirskriftastillingar Outlook"); }
+    catch (e) { toast("Gat ekki afritað – veldu undirskriftina og afritaðu handvirkt."); } };
+  const sig = () => "\n\n";
+  window.poSigSettingsHTML = () => { const g = SIG(), f = (k, l, ex = "") => `<label>${l}<input id="sg-${k}" value="${esc(g[k] || "")}" ${ex}></label>`;
+    return `<div class="viewtitle">Undirskrift í pósti</div>
+      <p class="hint" style="margin:0 0 8px">Birtist neðst í póstum sem eru sendir úr appinu, á íslensku og ensku, með merki AERA.</p>
+      <div class="sigprev" id="sg-prev">${poSigHTML("icons/sig-logo.png")}</div>
+      ${f("kvedja", "Kveðja")}${f("nafn", "Nafn")}
+      <div class="two">${f("titillIS", "Starfsheiti (íslenska)")}${f("titillEN", "Starfsheiti (enska)")}</div>
+      ${f("fyrirtaeki", "Fyrirtæki")}
+      <div class="two">${f("netfang", "Netfang", 'type="email"')}${f("simi", "Sími (valfrjálst)", 'inputmode="tel" placeholder="+354 …"')}</div>
+      ${f("vefur", "Vefsíða (valfrjálst)", 'placeholder="aerastudio.is"')}
+      <div class="links"><button type="button" class="btn" data-act="posigsave">Vista undirskrift</button><button type="button" class="btn" data-act="posigcopy">Afrita fyrir Outlook</button></div>
+      <p class="hint" style="margin-top:6px">„Afrita fyrir Outlook“ setur undirskriftina á klippiborðið. Límdu hana svo í Outlook › Stillingar › Undirskriftir til að nota hana líka þar.</p>`; };
+  const sgRead = () => { const o = {}; ["kvedja", "nafn", "titillIS", "titillEN", "fyrirtaeki", "netfang", "simi", "vefur"].forEach(k => { const el = document.getElementById("sg-" + k); if (el) o[k] = el.value.trim(); }); return o; };
+  document.addEventListener("input", e => { if (e.target.id?.startsWith("sg-")) { const p = document.getElementById("sg-prev"); if (p) p.innerHTML = poSigHTML("icons/sig-logo.png", sgRead()); } });
 
   window.poCompose = function (o = {}) {
     if (!msOn()) { toast("Tengdu Microsoft fyrst (Stillingar)."); return; }
@@ -204,7 +236,9 @@
         `<div class="rfield"><span class="lbl">Til <span class="req">*</span></span><div class="rbox" id="po-to-box"><input autocomplete="off" inputmode="email" aria-label="Viðtakendur" placeholder="Nafn eða netfang"></div><div class="rsugs" id="po-to-sug" hidden></div><input type="hidden" id="po-to"></div>
          <div class="rfield"><span class="lbl">Afrit (cc)</span><div class="rbox" id="po-cc-box"><input autocomplete="off" inputmode="email" aria-label="Afrit"></div><div class="rsugs" id="po-cc-sug" hidden></div><input type="hidden" id="po-cc"></div>`}
       ${mode === "new" ? `<label><span class="lbl">Efni <span class="req">*</span></span><input id="po-subj" value="${esc(subj)}" autocomplete="off"></label>` : `<p class="hint" style="margin:0">Efni: ${esc(subj)}</p>`}
-      <label>Texti<textarea id="po-body" rows="9">${esc(o.body != null ? o.body : sig())}</textarea></label>
+      <label>Texti<textarea id="po-body" rows="8">${esc(o.body != null ? o.body : sig())}</textarea></label>
+      <label class="chk" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-size:14.5px"><input type="checkbox" id="po-sig" checked style="width:auto">Undirskrift</label>
+      <div class="sigprev" id="po-sigprev">${poSigHTML("icons/sig-logo.png")}</div>
       <div><div class="kind" style="margin-bottom:6px">Viðhengi</div><div id="po-atts" class="poatts"></div>
         <label class="btn" style="display:inline-flex;margin-top:6px;cursor:pointer">📎 Bæta við skrá<input id="po-file" type="file" multiple hidden></label></div>
       ${mode === "new" ? `<label>Tengja við verkefni<select id="po-proj"><option value="">Ekkert</option>${verkefni().slice().sort((a, b) => (isDone(a) - isDone(b)) || b.nr.localeCompare(a.nr)).map(x => `<option value="${esc(x.id)}"${x.id === pid0 ? " selected" : ""}>${esc(x.nafn)}</option>`).join("")}</select></label>` : ""}
@@ -214,6 +248,7 @@
     const drawAtts = () => { document.getElementById("po-atts").innerHTML = atts.length ? atts.map((a, i) => `<span class="chipbtn" style="display:inline-flex;gap:6px;align-items:center">📎 ${esc(a.name)} <small>${esc(kb(a.size))}</small><button type="button" class="x" data-rm="${i}" aria-label="Fjarlægja">✕</button></span>`).join(" ") : `<span class="hint">Engin.</span>`;
       sheet.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { atts.splice(+b.dataset.rm, 1); drawAtts(); }); };
     drawAtts();
+    { const sc = document.getElementById("po-sig"), sp = document.getElementById("po-sigprev"); if (sc) sc.onchange = () => { sp.hidden = !sc.checked; }; }
     const RF = ["po-to", "po-cc"].filter(x => document.getElementById(x + "-box")).map(x => rcptField(x, x === "po-to" ? o.to || "" : o.cc || ""));
     const rl = document.getElementById("po-relog"); if (rl) rl.onclick = () => MS.login().then(() => { toast("Tengt – nú má senda"); poCompose(o); }).catch(e => toast(e.message));
     document.getElementById("po-file").onchange = e => { [...e.target.files].forEach(f => atts.push({ name: f.name, type: f.type || "application/octet-stream", size: f.size, data: f })); e.target.value = ""; drawAtts(); };
@@ -228,12 +263,14 @@
       const btn = document.getElementById("po-s"); btn.disabled = true; btn.textContent = "Sendi…";
       try {
         const fa = await Promise.all(atts.map(async a => ({ "@odata.type": "#microsoft.graph.fileAttachment", name: a.name, contentType: a.type, contentBytes: await b64(a.data) })));
+        const withSig = document.getElementById("po-sig")?.checked, sigH = withSig ? "<br>" + poSigHTML("cid:" + LOGO_CID) : "";
+        if (withSig) fa.push(await logoAtt());
         if (mode === "new") {
-          await MS.g("/me/sendMail", { method: "POST", body: { message: { subject, body: { contentType: "HTML", content: toHtml(text) }, toRecipients: addrs(to), ccRecipients: addrs(cc), attachments: fa }, saveToSentItems: true } });
+          await MS.g("/me/sendMail", { method: "POST", body: { message: { subject, body: { contentType: "HTML", content: toHtml(text) + sigH }, toRecipients: addrs(to), ccRecipients: addrs(cc), attachments: fa }, saveToSentItems: true } });
         } else {
           const fn = { reply: "createReply", replyAll: "createReplyAll", forward: "createForward" }[mode];
           const dr = await MS.g(`/me/messages/${encodeURIComponent(o.mid)}/${fn}`, { method: "POST", body: {} });
-          const patch = { body: { contentType: "HTML", content: toHtml(text) + "<br>" + (dr.body?.content || "") } };
+          const patch = { body: { contentType: "HTML", content: toHtml(text) + sigH + "<br>" + (dr.body?.content || "") } };
           if (mode === "forward") { patch.toRecipients = addrs(to); if (cc) patch.ccRecipients = addrs(cc); }
           await MS.g(`/me/messages/${encodeURIComponent(dr.id)}`, { method: "PATCH", body: patch });
           for (const a of fa) await MS.g(`/me/messages/${encodeURIComponent(dr.id)}/attachments`, { method: "POST", body: a });
@@ -256,6 +293,8 @@
   }
 
   window.poAct = function (k, r) {
+    if (k === "posigsave") { const o = sgRead(); saveSnapshot(st => { st.stillingar = st.stillingar || {}; st.stillingar.undirskrift = o; }).then(() => toast("Undirskrift vistuð")); return; }
+    if (k === "posigcopy") { poSigCopy(); return; }
     if (k === "ponew") { poCompose({ pid: r[0] || null, subject: r[0] && findProj(r[0]) ? findProj(r[0]).nr + " " + findProj(r[0]).stutt + " – " : "" }); return; }
     if (k === "poreply") { poCompose({ mode: r[0], mid: r.slice(1).join(":") }); return; }
     if (k === "pofold") { fold = r[0]; q = ""; reset(); render(); return; }

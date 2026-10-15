@@ -302,11 +302,7 @@
         body: `Góðan dag,
 
 Meðfylgjandi er reikningur nr. ${R.nr} að upphæð ${kr(R.tot)} með gjalddaga ${dIS(R.gjalddagi)}.${s.banki ? `
-Greiðist inn á reikning ${s.banki}${s.kt ? ", kt. " + s.kt : ""}.` : ""}
-
-Kveðja,
-${MS.user()?.name || ""}
-${s.nafn || "AERA Studio"}`,
+Greiðist inn á reikning ${s.banki}${s.kt ? ", kt. " + s.kt : ""}.` : ""}`,
         atts: [{ name: fileBase(R) + ".pdf", type: "application/pdf", size: bytes.length, data: bytes }],
         onSent: () => saveSnapshot(st => { const q = (st.reikningar || []).find(x => x.id === id); if (q) q.sent = isoDay(new Date()); }) }); return; }
     if (k === "rkprint") { const R = findR(id); if (R) printInv(R); return; }

@@ -429,6 +429,7 @@ body.haspnew .fab{display:none!important}
 .dbadge{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--dc);color:#fff;font-weight:600;font-size:13px;flex:none}
 .skseg{flex-wrap:wrap}.skseg button{font-size:13px}
 .side .tc{display:none}
+.sigprev{background:#fff;border-radius:12px;padding:16px;margin:4px 0 10px;overflow-x:auto}
 .kt{font-variant-numeric:tabular-nums}
 .rfield{position:relative;display:flex;flex-direction:column;gap:6px}.rfield .lbl{font-size:13px;color:var(--muted)}
 .rbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:46px;padding:6px 8px;border:1px solid var(--line);border-radius:12px;background:var(--field,var(--surface));cursor:text}
@@ -555,7 +556,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.31"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.32"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
@@ -1305,6 +1306,7 @@ function vStillingar(){
   <p class="hint">Sjálfvirkt: ljóst á tölvu, dökkt í síma. Líka hægt að skipta með hnappinum efst til hægri.</p>
   ${["light","dark"].map(k=>`<div class="kind" style="margin:12px 0 6px">${k==="light"?"Ljóst þema":"Dökkt þema"}</div><div class="stat-row">${VARIANTS[k].map(([v,l,a,b])=>`<button type="button" class="chipbtn swatch" data-act="variant:${k}:${v}" aria-pressed="${(k==="light"?LVAR:DVAR)===v}"><i style="--a:${a};--b:${b}"></i>${l}</button>`).join("")}</div>`).join("")}
   ${window.msStillingarHTML?msStillingarHTML():""}
+  ${window.poSigSettingsHTML?poSigSettingsHTML():""}
   ${window.rkStillingarHTML?rkStillingarHTML():""}
   <div class="viewtitle">Vinnuvika</div>
   <div class="two" style="align-items:end"><label>Markmið klst. á viku<input id="cfg-vikumark" type="text" inputmode="decimal" value="${esc(num(CFG().vikumark||40))}"></label><button type="button" class="btn" data-act="cfg:vikumark:0" style="min-height:46px">Vista</button></div>
