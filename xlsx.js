@@ -51,6 +51,7 @@
 </cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
+  window.makeZip = zip;
   window.makeXlsx = function ({ sheet = "Tímaskýrsla", cols = [], rows = [], merges = [], freezeRow = 0, heights = {} }) {
     const sd = rows.map((r, ri) => {
       const cells = r.map((c, ci) => {

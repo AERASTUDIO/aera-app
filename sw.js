@@ -1,7 +1,7 @@
 // Þjónustuskrifta (service worker): geymir appið á tækinu svo það opnist hratt og virki án nets.
 // Hækkaðu VERSION þegar eitthvað breytist, þá sækja tækin nýju útgáfuna.
-const VERSION = "aera-v14";
-const SHELL = ["./", "index.html", "firebase.js", "firebase-config.js", "xlsx.js", "manifest.webmanifest",
+const VERSION = "aera-v15";
+const SHELL = ["./", "index.html", "firebase.js", "firebase-config.js", "xlsx.js", "ms.js", "ms-app.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

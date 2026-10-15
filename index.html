@@ -3,6 +3,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="AERA">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>AERA Studio</title>
+<script src="ms.js"></script>
 </head><body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap">
@@ -1002,7 +1003,7 @@ function dVerk(p){
   if(DTAB==="fundir") body=`${MCP?`<div class="links"><button type="button" class="btn primary" data-act="add:fund">+ Fundur</button></div>`:""}
     ${upF.length?`<div class="viewtitle">Framundan · ${upF.length}</div>${llist(upF.map(meetRowL))}`:""}${pastF.length?`<div class="viewtitle">Liðnir · ${pastF.length}</div>${llist(pastF.map(meetRowL))}`:""}
     ${fs.length?"":`<div class="empty" style="margin-top:16px">Engir fundir.</div>`}`;
-  if(DTAB==="skrar") body=pending&&!fold?`<div class="empty" style="margin-top:16px">Mappa í OneDrive bíður stofnunar. Biddu Claude að „stofna OneDrive-möppur“.</div>`:skrarHTML(p);
+  if(DTAB==="skrar") body=pending&&!fold&&!(window.MS&&MS.on())?`<div class="empty" style="margin-top:16px">Mappa í OneDrive bíður stofnunar. Hún stofnast sjálfkrafa þegar appið er tengt Microsoft.${window.msMissing?msMissing():""}</div>`:skrarHTML(p);
   if(DTAB==="timar") body=timesPage(tl,"kstart:"+esc(p.id));
   if(DTAB==="stillingar") body=`<div class="viewtitle">Staða</div>${statRow("verk",p.id,STODUR().map(x=>x.n),p.stada)}
     <div class="viewtitle" style="margin-top:6px">Upplýsingar</div>${settingsCard([
@@ -1047,7 +1048,7 @@ function dFund(f){
     ["Fundarmenn",f.attendees?.length?f.attendees.map(esc).join(", "):""],
     ["Fundargerð",f.fundargerd?`<a class="plink" href="${esc(f.fundargerd)}" target="_blank" rel="noopener">${esc(FGLABEL(f).replace("📄 ",""))}</a>`:""],
     ["Fundarhlekkur",f.fundarhlekkur?`<a class="plink" href="${esc(f.fundarhlekkur)}" target="_blank" rel="noopener">Tengjast fundi</a>`:""]])}</dl>
-    ${MCP?`<div class="links"><button type="button" class="btn primary" data-act="fundtime:${esc(f.id)}">Skrá tíma fyrir fundinn</button><button type="button" class="btn" data-act="ics:${esc(f.id)}">📅 Setja í dagatalið mitt</button></div>`:""}
+    ${MCP?`<div class="links"><button type="button" class="btn primary" data-act="fundtime:${esc(f.id)}">Skrá tíma fyrir fundinn</button><button type="button" class="btn" data-act="ics:${esc(f.id)}">📅 Setja í dagatalið mitt</button>${!f.fundargerd&&window.MS&&MS.on()?`<button type="button" class="btn" data-act="msfg:${esc(f.id)}">📄 Búa til fundargerð</button>`:""}</div>`:""}
     ${linkBtns({...f,mappa:f.mappa||p?.mappa},{edit:"fund"})}</div>
   ${textCard("Á síðu fundarins",f.lysing)}
   ${p&&(p.undirverk||[]).some(u=>u.stada!=="Done")?`<div class="viewtitle">Opin undirverk í verkefninu</div><div class="card"><div class="list" style="gap:2px">${p.undirverk.filter(u=>u.stada!=="Done").map(subRow).join("")}</div></div>`:""}
@@ -1110,6 +1111,7 @@ viewEl.addEventListener("click",e=>{if(lpFired){lpFired=false; e.preventDefault(
 viewEl.addEventListener("change",e=>{if(e.target.id==="timfilter"){timFilter=e.target.value;render();}
   if(e.target.id==="undirfilter"){undirFilter=e.target.value;render();} if(e.target.id==="skjalfilter"){skjalFilter=e.target.value;render();}});
 function doAct(act,el){const [k,...r]=act.split(":");
+  if(k.startsWith("ms")&&window.msAct){msAct(k,r,el); return;}
   if(k==="later"){showLater=true; render(); return;}
   if(k==="vskf"){vskFilter=r.join(":"); render(); return;}
   if(k==="cal"){calSel=r[0]; const x=d(calSel); if(x.getMonth()!==calMonth.getMonth()) calMonth=new Date(x.getFullYear(),x.getMonth(),1); render(); return;}
@@ -1201,6 +1203,7 @@ function vStillingar(){
   <div class="viewtitle">Útlit</div><div class="stat-row">${[["auto","Sjálfvirkt"],["light","Ljóst"],["dark","Dökkt"]].map(([k,l])=>`<button type="button" class="chipbtn" data-act="theme:${k}" aria-pressed="${THEME===k}">${l}</button>`).join("")}</div>
   <p class="hint">Sjálfvirkt: ljóst á tölvu, dökkt í síma. Líka hægt að skipta með hnappinum efst til hægri.</p>
   ${["light","dark"].map(k=>`<div class="kind" style="margin:12px 0 6px">${k==="light"?"Ljóst þema":"Dökkt þema"}</div><div class="stat-row">${VARIANTS[k].map(([v,l,a,b])=>`<button type="button" class="chipbtn swatch" data-act="variant:${k}:${v}" aria-pressed="${(k==="light"?LVAR:DVAR)===v}"><i style="--a:${a};--b:${b}"></i>${l}</button>`).join("")}</div>`).join("")}
+  ${window.msStillingarHTML?msStillingarHTML():""}
   <div class="viewtitle">Vinnuvika</div>
   <div class="two" style="align-items:end"><label>Markmið klst. á viku<input id="cfg-vikumark" type="text" inputmode="decimal" value="${esc(num(CFG().vikumark||40))}"></label><button type="button" class="btn" data-act="cfg:vikumark:0" style="min-height:46px">Vista</button></div>
   <div class="viewtitle">Áminningar</div>
@@ -1586,6 +1589,7 @@ async function save(ev){
       const dates=[...Array(rn)].map((_,k)=>{const x=d(dt); if(rp==="m") x.setMonth(x.getMonth()+k); else if(rp) x.setDate(x.getDate()+k*(+rp)); return isoDay(x);});
       await saveSnapshot(s=>{dates.forEach((ds,k)=>(s.fundir=s.fundir||[]).push({id:k?newId():id,name,date:ds+"T"+tm+":00",stadsetning:place||null,fundarhlekkur:link||null,fundargerd:k?null:(fg||null),projectId:pid||null,verknr:p?.nafn||null,mappa:p?.mappa||null,attendees:[],seria}));});
       toast(rn>1?`${rn} fundir vistaðir`:"Fundur vistaður");
+      if(!fg&&window.MS&&MS.on()&&window.msFundargerd) msFundargerd(id);
     }
     if(kind==="undir"){
       const pid=val("f-proj"),name=val("f-name"),dt=val("f-date"),st=val("f-status"),note=val("f-note"),mp=val("f-mappa"); const p=findProj(pid);
@@ -1773,7 +1777,8 @@ const ODTYPE={pdf:"PDF",docx:"Word",doc:"Word",xlsx:"Excel",xls:"Excel",pptx:"Po
 const odUrl=(parts,isFile)=>{const u=SK.grunnur+parts.map(encodeURIComponent).join("/"); return isFile&&/\.(docx?|xlsx?|pptx?)$/i.test(parts[parts.length-1])?u+"?web=1":u;};
 function projFolder(p){if(!SK?.moppur) return null; const k=Object.keys(SK.moppur).find(k=>k===p.nafn)||Object.keys(SK.moppur).find(k=>p.nr&&k.startsWith(p.nr+" ")); return k?{k,...SK.moppur[k]}:null;}
 function skrarHTML(p){
-  const m=projFolder(p); if(!SK) return "";
+  if(window.MS&&MS.on()&&window.msSkrar) return msSkrar(p);
+  const m=projFolder(p); if(!SK) return window.msMissing?`<div class="viewtitle">Skrár í OneDrive</div><div class="empty">Tengdu Microsoft til að sjá skrár verkefnisins.${msMissing()}</div>`:"";
   if(!m) return `<div class="viewtitle">Skrár í OneDrive</div><div class="empty">Engin mappa fannst fyrir ${esc(p.nafn)} undir AERA/Verkefni.</div>`;
   const item=(parts,it)=>{const isF=it.t==="f", ext=isF?(it.n.split(".").pop()||"").toLowerCase():"";
     return `<a class="lrow fl" href="${esc(odUrl(parts.concat(it.n),isF))}" target="_blank" rel="noopener"><div class="lm"><div class="lt">${isF?"":"📁 "}${esc(it.n)}</div><div class="ls">${esc([isF?(ODTYPE[ext]||ext.toUpperCase()):"Mappa",kb(it.s)].join(" · "))}</div></div><div class="lr"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></div></a>`;};
@@ -1782,15 +1787,16 @@ function skrarHTML(p){
       ${has?`<a class="plink" href="${esc(odUrl(parts))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Opna</a>`:""}</summary>
       ${d.i&&d.i.length?`<div class="fitems">${d.i.map(it=>item(parts,it)).join("")}</div>`:has?`<div class="fitems"><div class="ls" style="padding:8px 0">Opnaðu möppuna til að sjá innihaldið.</div></div>`:""}</details>`;}).join("");
   return `<div class="viewtitle" style="display:flex;justify-content:space-between;gap:8px"><span>Skrár í OneDrive</span><a class="plink" href="${esc(odUrl([m.k]))}" target="_blank" rel="noopener">Opna möppu</a></div>
-  <div class="llist">${rows}</div><p class="hint" style="margin-top:8px">Listi síðast uppfærður ${esc(fmtDate(SK.uppfaert))}. Biddu Claude að „uppfæra skráalistann“ til að fá nýjar skrár.</p>`;
+  <div class="llist">${rows}</div><p class="hint" style="margin-top:8px">Listi síðast uppfærður ${esc(fmtDate(SK.uppfaert))}. ${window.msMissing?"Tengdu Microsoft til að sjá nýjustu skrárnar og forskoða þær.":"Biddu Claude að „uppfæra skráalistann“ til að fá nýjar skrár."}</p>${window.msMissing?msMissing():""}`;
 }
 window.aeraStart=function(db){
   DB=db; MCP={local:true}; document.getElementById("syncbtn").hidden=false; document.getElementById("logoutbtn").hidden=false; document.getElementById("fab").hidden=false;
   db.watch("app/skrar",s=>{SK=s.exists?s.data():null; if(S) render();},()=>{});
-  db.watch("app/state",s=>{PENDING=!!s.pending; if(s.exists){const nd=s.data(); if(JSON.stringify(nd)!==JSON.stringify(S)){S=nd; render();} else drawSync();} else if(!s.fromCache) importView();},
+  db.watch("app/state",s=>{PENDING=!!s.pending; if(s.exists){const nd=s.data(); if(JSON.stringify(nd)!==JSON.stringify(S)){S=nd; render();} else drawSync(); if(!s.fromCache&&window.msTick) msTick();} else if(!s.fromCache) importView();},
     e=>{document.getElementById("view").innerHTML=`<h2 class="big">Gögn ekki aðgengileg</h2><div class="empty">${esc(e?.code==="permission-denied"?"Þessi aðgangur hefur ekki leyfi til að lesa gögnin.":(e?.message||"Óþekkt villa"))}</div>`;});
 };
 document.getElementById("fab").hidden=true;
 </script>
+<script src="ms-app.js"></script>
 
 </body></html>
