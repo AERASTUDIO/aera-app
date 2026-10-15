@@ -196,7 +196,7 @@
   window.poSigHTML = (logo, o) => { const g = { ...SIG(), ...(o || {}) }, E = x => esc(x || ""), web = String(g.vefur || "").replace(/^https?:\/\//, "");
     return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Calibri,Arial,Helvetica,sans-serif;color:#1c2126">
 ${g.kvedja ? `<tr><td colspan="2" style="padding:0 0 14px 0;font-size:10.5pt;color:#1c2126">${E(g.kvedja)},</td></tr>` : ""}
-<tr><td style="padding:0 16px 0 0;vertical-align:middle"><img src="${logo}" width="130" height="55" alt="AERA Studio" style="display:block;border:0;width:130px;height:55px"></td>
+<tr><td style="padding:0 16px 0 0;vertical-align:middle"><img src="${logo}" width="140" height="49" alt="AERA Studio" style="display:block;border:0;width:140px;height:49px"></td>
 <td style="border-left:2px solid #1f4e79;padding:2px 0 2px 16px;vertical-align:middle;font-size:10pt;line-height:15pt">
 <span style="font-size:11.5pt;font-weight:bold;color:#0b1e33">${E(g.nafn)}</span><br>
 <span style="color:#5b7fa6">${[g.titillIS, g.titillEN].filter(Boolean).map(E).join(" &middot; ")}</span><br>
