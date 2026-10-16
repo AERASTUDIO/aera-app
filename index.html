@@ -574,7 +574,7 @@ const starfName=sk=>STARFS().find(x=>x.sk===sk)?.nafn||sk||"";
 const isDone=p=>!!STODUR().find(x=>x.n===p?.stada)?.lokid;
 const stColor=n=>STODUR().find(x=>x.n===n)?.c||"slate";
 const MON=["jan","feb","mar","apr","maí","jún","júl","ágú","sep","okt","nóv","des"], DAY=["sun","mán","þri","mið","fim","fös","lau"];
-const APP_VERSION="1.1.39"; document.getElementById("appver").textContent="v"+APP_VERSION;
+const APP_VERSION="1.1.40"; document.getElementById("appver").textContent="v"+APP_VERSION;
 {const hd=document.querySelector("header"); const setH=()=>document.documentElement.style.setProperty("--hh",hd.getBoundingClientRect().height+"px"); setH(); try{new ResizeObserver(setH).observe(hd);}catch(e){addEventListener("resize",setH);}}
 let S=null, tab="yfirlit", DB=null, MCP=null, DETAIL=null, listScroll=0;
 try{const t=localStorage.getItem("aera-tab"); if(TABS.includes(t)) tab=t;}catch(e){}
@@ -1700,10 +1700,16 @@ const newId=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(16)+M
 async function createPage(){return newId();}
 async function updatePage(){}
 let saveErr=null;
+// Fjarlægir „undefined“ úr hlutum (Firestore hafnar þeim) og breytir í null í listum.
+function fsClean(v){if(Array.isArray(v)) return v.map(x=>x===undefined?null:fsClean(x));
+  if(v&&typeof v==="object"&&Object.getPrototypeOf(v)===Object.prototype){const o={}; for(const k in v){if(v[k]!==undefined) o[k]=fsClean(v[k]);} return o;} return v;}
 async function saveSnapshot(mut){
   if(!DB) throw {message:"Ekki tengt gagnagrunni."};
-  const cur=structuredClone(S||{}); mut(cur); cur.uppfaert=new Date().toISOString(); S=cur; render();
-  DB.set("app/state",cur).catch(e=>{saveErr=e; toast("Vistun mistókst – breytingin fór ekki upp. ("+(e?.code||e?.message||"villa")+")");});
+  const prev=S, cur=structuredClone(S||{}); mut(cur); cur.uppfaert=new Date().toISOString();
+  const clean=fsClean(cur); S=clean; render();
+  // Firestore tekur ekki við „undefined“; hreinsað hér að ofan. Ef vistun mistekst samt er skjárinn færður til baka svo ekkert sýnist vistað sem er það ekki.
+  const fail=e=>{saveErr=e; if(S===clean){S=prev; render();} toast("Vistun mistókst – breytingin fór ekki upp. ("+(e?.code||e?.message||"villa")+")");};
+  try{ DB.set("app/state",clean).catch(fail); }catch(e){ fail(e); throw e; }
 }
 const sFindP=(s,id)=>(s.verkefni||[]).find(v=>v.id===id);
 const sFindU=(s,id)=>{for(const p of s.verkefni||[]){const u=(p.undirverk||[]).find(u=>u.id===id); if(u) return [p,u];} return [null,null];};

@@ -10,7 +10,7 @@ import { firebaseConfig, ALLOWED_EMAILS } from "./firebase-config.js";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 // Staðbundið afrit í símanum/tölvunni: appið virkar án nets og samstillir þegar netið kemur aftur.
-const fs = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+const fs = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }), ignoreUndefinedProperties: true });
 
 const ref = path => doc(fs, ...path.split("/"));
 const login = document.getElementById("login");
